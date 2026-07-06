@@ -1,0 +1,10 @@
+https://medium.com/@elanaolson/a-beginners-guide-to-building-a-react-nextjs-app-7463120389f0
+
+https://www.geeksforgeeks.org/top-nextjs-projects-to-enhance-your-developement/
+
+https://dev.to/ash_grover/i-built-my-app-in-react-react-native-and-nextjs-lessons-learned-3f38
+
+https://reliasoftware.com/blog/react-project-ideas
+
+https://www.reddit.com/r/nextjs/comments/19c71ld/what_are_the_best_open_source_projects_to_learn/
+

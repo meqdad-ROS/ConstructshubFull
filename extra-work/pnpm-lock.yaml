@@ -1,0 +1,56 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      pnpm:
+        specifier: ^9.15.5
+        version: 9.15.5
+      run:
+        specifier: ^1.5.0
+        version: 1.5.0
+
+packages:
+
+  balanced-match@1.0.2:
+    resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
+
+  brace-expansion@2.0.1:
+    resolution: {integrity: sha512-XnAIvQ8eM+kC6aULx6wuQiwVsnzsi9d3WxzV3FpWTGA19F621kwdbsAcFKXgKUHZWsy+mY6iL1sHTxWEFCytDA==}
+
+  minimatch@10.0.1:
+    resolution: {integrity: sha512-ethXTt3SGGR+95gudmqJ1eNhRO7eGEGIgYA9vnPatK4/etz2MEVDno5GMCibdMTuBMyElzIlgxMna3K94XDIDQ==}
+    engines: {node: 20 || >=22}
+
+  pnpm@9.15.5:
+    resolution: {integrity: sha512-hFGWAmqrHMPwmKBHS2TfurKv56G06R3YaJXY5Koyp6bQMEni0K13C75N4COnEi+2jBodbg0DPHB2CF+dXUgA1A==}
+    engines: {node: '>=18.12'}
+    hasBin: true
+
+  run@1.5.0:
+    resolution: {integrity: sha512-CBPzeX6JQZUdhZpSFyNt2vUk44ivKMWZYCNBYoZYEE46mL9nf6WyMP3320WnzIrJuo89+njiUvlo83jUEXjXLg==}
+    engines: {node: '>=v0.9.0'}
+    hasBin: true
+
+snapshots:
+
+  balanced-match@1.0.2: {}
+
+  brace-expansion@2.0.1:
+    dependencies:
+      balanced-match: 1.0.2
+
+  minimatch@10.0.1:
+    dependencies:
+      brace-expansion: 2.0.1
+
+  pnpm@9.15.5: {}
+
+  run@1.5.0:
+    dependencies:
+      minimatch: 10.0.1

@@ -1,0 +1,60 @@
+####### installation command inside the virtual environment ########
+## for packages type:  python3.9 -m pip install packageName ##
+## for full text file type : ###
+##### python3.9 -m pip install -r path/to/requirements.txt #######
+######## pip install -r requirements.txt  ########
+###### Requirements without Version Specifiers ######
+
+#### required packages for data analysis ### 
+
+cython 
+matplotlib
+numpy 
+pandas 
+pandas-profiling
+scipy
+sympy
+matplotlib 
+pandas  
+django 
+PyQt5 
+keras 
+Theano  
+TensorFlow 
+scikit-learn 
+torch 
+torchvision 
+torchaudio 
+-f https://download.pytorch.org/whl/torch_stable.html 
+Scipy 
+ipython 
+jupyter 
+sympy 
+nose 
+scikit-image 
+Opencv-python  
+opencv-contrib-python 
+SimpleCV 
+Mahotas 
+SimpleITK  
+###pgmagick 
+pycairo 
+NLTK 
+Seaborn 
+Boost 
+XGBoost 
+LightGBM  
+CatBoost 
+FastAi 
+Gensim 
+Spacy 
+Bokeh 
+Plotly 
+Scrapy  
+#### statsmodels 
+#### virtualenv 
+#### Caffe 
+Pillow  
+Flask 
+
+
