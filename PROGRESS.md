@@ -266,7 +266,7 @@ After these ten, the next natural chunks are the Saudi payment adapter (needs me
 waquor/prisma/schema.prisma            74 models
 waquor/src/app/api/**/route.ts         80 API routes
 waquor/src/app                         80 pages (115 after Next.js split points)
-waquor/tests/*.test.ts                 100 passing cases
+waquor/tests/*.test.ts                 113 passing cases
 mobile/app/**/*.tsx                    ~32 screens
 mobile/tests/pure.test.ts              6 passing cases
 services/bim/                          11 pytest cases, FastAPI + IfcOpenShell + Docker
