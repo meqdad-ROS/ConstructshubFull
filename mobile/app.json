@@ -1,0 +1,86 @@
+{
+  "expo": {
+    "name": "ConstructsHub",
+    "slug": "constructhub",
+    "scheme": "constructhub",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b1220"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "sa.constructhub.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Unlock ConstructsHub with Face ID.",
+        "NSCameraUsageDescription": "Scan products and documents for search.",
+        "NSMicrophoneUsageDescription": "Voice search for materials and services.",
+        "NSLocationWhenInUseUsageDescription": "Share your live location only during an active trip or job."
+      },
+      "associatedDomains": ["applinks:constructhub.sa"]
+    },
+    "android": {
+      "package": "sa.constructhub.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b1220"
+      },
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "constructhub.sa", "pathPrefix": "/app" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-secure-store",
+      "expo-local-authentication",
+      "expo-image-picker",
+      "expo-document-picker",
+      "expo-av",
+      "expo-location",
+      "expo-sqlite",
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:3000",
+      "eas": {
+        "projectId": ""
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
+    }
+  }
+}

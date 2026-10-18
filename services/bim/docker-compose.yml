@@ -1,0 +1,81 @@
+# Local + staging sandbox for the BIM service.
+# For production the same hardening applies through k8s securityContext +
+# NetworkPolicy. This compose file enforces NFR-SEC-11:
+#   - no outbound network     → `network_mode: none` on the parse container
+#   - read-only root fs       → `read_only: true`
+#   - tmpfs /uploads          → ephemeral RAM-backed scratch
+#   - no capabilities         → cap_drop: ALL
+#   - no new privileges       → security_opt
+#   - resource caps           → mem_limit, pids_limit
+#
+# A reverse proxy (nginx / Traefik / your own) in a sibling container forwards
+# POST /parse on the private subnet. The parse container itself cannot egress.
+
+services:
+  bim-parser:
+    build: .
+    image: constructhub/bim:0.1.0
+    container_name: constructhub-bim
+    environment:
+      # Set in your deployment env. Same value as BIM_SERVICE_TOKEN on the
+      # Next.js side.
+      BIM_SERVICE_TOKEN: "${BIM_SERVICE_TOKEN:?set BIM_SERVICE_TOKEN in your env}"
+      BIM_MAX_UPLOAD_BYTES: "2147483648"       # 2 GB (SRS §6.5)
+    read_only: true
+    tmpfs:
+      - /uploads:size=4g,uid=10001,gid=10001,mode=1700
+      - /tmp:size=64m,uid=10001,gid=10001,mode=1700
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 4g
+    pids_limit: 256
+    # The sandbox has no network access out — the only way in is through the
+    # bim-proxy container below (shared bridge).
+    networks:
+      - bim-internal
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:8081/health', timeout=2); sys.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Minimal nginx reverse proxy that forwards /parse from the host to the
+  # sandbox. Replace with your production ingress; it is here so you can
+  # `docker compose up` and call POST http://localhost:8081/parse end-to-end.
+  bim-proxy:
+    image: nginx:1.27-alpine
+    container_name: constructhub-bim-proxy
+    ports:
+      - "127.0.0.1:8081:8081"
+    networks:
+      - bim-internal
+    depends_on:
+      bim-parser:
+        condition: service_healthy
+    configs:
+      - source: bim_nginx
+        target: /etc/nginx/conf.d/default.conf
+    restart: unless-stopped
+
+configs:
+  bim_nginx:
+    content: |
+      server {
+        listen 8081;
+        client_max_body_size 2048m;
+        proxy_read_timeout 300s;
+        location / {
+          proxy_pass http://bim-parser:8081;
+          proxy_set_header X-BIM-Timestamp $http_x_bim_timestamp;
+          proxy_set_header X-BIM-Signature $http_x_bim_signature;
+          proxy_set_header Content-Type $http_content_type;
+        }
+      }
+
+networks:
+  bim-internal:
+    driver: bridge
+    internal: true     # bridge has no gateway → no outbound internet

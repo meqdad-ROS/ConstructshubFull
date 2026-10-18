@@ -1,7 +1,7 @@
 # BanahBuild / ConstructsHub — Project Progress & Handoff
 
 > **Audience:** any AI agent (or human developer) picking up this project with no prior conversation context.
-> **Last updated:** 2026-10-12
+> **Last updated:** 2026-10-18
 > **Latest commit on `main`:** `36e72b1 full project before vacation complete`
 
 Read this file first. It is self-contained: every claim about the codebase is anchored to a path, a model, or a verifiable command. Nothing here depends on earlier conversation turns.
@@ -16,7 +16,7 @@ The repo lives at `/home/meqdad/My-Projects/Construct-Hub_Project` and has three
 
 | Surface | Path | Stack | Status |
 |---|---|---|---|
-| **Web app** | `waquor/` | Next.js 15 App Router, Prisma 6, TypeScript, Zod, TanStack Query, Tailwind | **80 pages · 80 API routes · 74 Prisma models · 100 passing tests** |
+| **Web app** | `waquor/` | Next.js 15 App Router, Prisma 6, TypeScript, Zod, TanStack Query, Tailwind | **80 pages · 82 API routes · 74 Prisma models · 117 passing tests** |
 | **Mobile app** | `mobile/` | Expo SDK 52, Expo Router 4, React Native 0.76, TanStack Query, expo-sqlite, biometric gate, FCM/APNs push | **~32 screens · 6 passing pure-logic tests · needs `npm install` locally** |
 | **BIM service** | `services/bim/` | Python FastAPI + IfcOpenShell, HMAC-signed, Docker-sandboxed (read-only root, tmpfs, `cap_drop ALL`, no outbound network) | **FastAPI + 11 pytest cases · Docker image + compose complete** |
 
@@ -37,7 +37,7 @@ Columns are **Done % · Done so far · Still open**. Percentages are my own best
 | Area | Done % | Done so far | Still open |
 |---|---:|---|---|
 | Prisma data model (SRS §14.3) | 95 | 74 models in `waquor/prisma/schema.prisma` — users, orgs, catalogue, orders, projects, tenders+bids, jobs+applications, trips+vehicles+pings, escrow+ledger+payouts+wallet, invoices (ZATCA PIH chain), BIM jobs, estimator usage, social accounts/posts, deviceTokens, notifications+prefs, searchEvent, auditEvent, **AnalyticsEvent, RouteMetric** (added this session) | Multi-tier Category hierarchy; versioned `PriceBook` with JOD+SAR; SKU variants; bulk CSV import model; sealed-bid cryptography fields |
-| REST API surface (SRS §14.2) | 83 | 81 route files under `waquor/src/app/api/**` — orders, projects, tenders+bids+award, rfqs, quotations, messages+threads, trips, vehicles, bookings, deliveries, addresses, auth, admin (search console, verifications, audit, config, disputes, support), payments (Stripe + Polar + Mock), wallet, escrow, payouts, ZATCA onboard+clearance+report, BIM upload+status, search (unified, autocomplete, image, voice, document, ifc, ocr, clarify), social (accounts, callback, posts), notifications (list, prefs, devices, test), analytics (events, me, admin/routes, admin/events), **`POST /api/trips/[tripId]/ping`** (2026-10-18, 12 tests green) | trip PATCH `/api/trips/[id]` (mobile calls it); finance-console admin APIs; consent-event listing |
+| REST API surface (SRS §14.2) | 83 | 82 route files under `waquor/src/app/api/**` — orders, projects, tenders+bids+award, rfqs, quotations, messages+threads, trips, vehicles, bookings, deliveries, addresses, auth, admin (search console, verifications, audit, config, disputes, support), payments (Stripe + Polar + Mock), wallet, escrow, payouts, ZATCA onboard+clearance+report, BIM upload+status, search (unified, autocomplete, image, voice, document, ifc, ocr, clarify), social (accounts, callback, posts), notifications (list, prefs, devices, test), analytics (events, me, admin/routes, admin/events), **`POST /api/trips/[tripId]/ping`** + **`GET /api/health`** (2026-10-18, 17 tests green) | trip PATCH `/api/trips/[id]` (mobile calls it); finance-console admin APIs; consent-event listing |
 | Scheduler / cron | 10 | None wired yet. Fields present (`EscrowHold.releaseAfter`, `scheduledFor` on `SocialPost`, 24-h ZATCA reporting trigger) | All of it — need any cron (BullMQ / `node-cron` / platform CronCreate). First three jobs: 72-h auto-release of escrow, 24-h ZATCA reporting, scheduled social posts |
 
 ### 2.2 Dashboards & analytics (this is the slice just finished)
@@ -87,7 +87,7 @@ Every helper also writes an `AnalyticsEvent` row so the dashboard tiles light up
 | **🗳️ Tendering (§7.3)** | 75 | Sealed-bid cryptography; subcontract package visibility; Gantt |
 | **🤝 Trust / disputes (§7.6)** | 55 | Evidence upload with signed URLs; SLA timers + reminders; chargeback integration |
 | **🔧 Workforce (§7.4)** | 55 | Time-tracking UI; attendance geofence; worker contract e-sign |
-| **🚚 Logistics (§7.5)** | 60 | **`POST /api/trips/[tripId]/ping` ✅ done** (2026-10-18) — auth-gated (driver-only), 1 req/s rate limit, Zod validation, writes `WorkerLocationPing`, returns `tripStatus` for mobile self-correction; 12 tests. | **`PATCH /api/trips/[tripId]`** still missing (mobile accept/start/complete buttons 404 → outbox). dispatch algorithm; fleet sub-accounts; maps/routing; GPS aggregator |
+| **🚚 Logistics (§7.5)** | 60 | **`POST /api/trips/[tripId]/ping` ✅ done** (2026-10-18) — auth-gated (`USR_DRIVER` 403 before rate-limit/DB), 1 req/s rate limit, Zod validation (`lat`/`latitude`, `lng`/`longitude`, nullish `accuracyM`/`accuracy`), writes `WorkerLocationPing`, `withMetrics` + `trackEvent('driver.ping')`, returns `{ ok, success, tripStatus, pingId, receivedAt }`; 17 tests. | **`PATCH /api/trips/[tripId]`** still missing (mobile accept/start/complete buttons 404 → outbox). dispatch algorithm; fleet sub-accounts; maps/routing; GPS aggregator |
 | **📣 Social connectors (§9.1)** | 70 | Instagram + TikTok publish are stubs returning `ok:true` without hitting real endpoints. Also: LinkedIn URN resolver; Facebook Page-token exchange via `/me/accounts`; X PKCE plain → S256; refresh-token rotation; scheduled-post cron |
 | **🤖 AI assistant (§9.4)** | 10 | Entire module |
 | **🔐 Security (NFR-SEC)** | 85 | Independent pen test; AI prompt-injection defences; WAF; SBOM + dep-scan in CI |
@@ -139,7 +139,8 @@ Construct-Hub_Project/
 │   ├── middleware.ts                         CSP, HSTS, HMAC, auth gate for /dashboard and /dashboard/admin
 │   └── tests/
 │       ├── analytics.test.ts                 (NEW) 7 cases — percentile, summariseDurations, templateRoute, hashSession
-│       └── 20 other suites — 100 passing total
+│       ├── trips-ping.test.ts                (NEW) 17 cases — processPing, role gate, rateLimit, Zod schema, live server
+│       └── 19 other suites — 117 passing total
 ├── mobile/
 │   ├── app/
 │   │   ├── analytics.tsx                     (NEW) role-aware tiles + event activity
@@ -165,8 +166,8 @@ From `waquor/`:
 ```bash
 npm install                    # once
 npm run typecheck              # tsc --noEmit → should be clean
-npm test                       # 100 passing
-npx next build                 # 115 pages, 80 API routes, no errors
+npm test                       # 117 passing
+npx next build                 # 115 pages, 82 API routes, no errors
 npx next dev                   # http://localhost:3000
 ```
 
@@ -211,7 +212,7 @@ These are concrete code tasks with no external dependency:
 
 | # | Task | Where | Why |
 |---|---|---|---|
-| 1 | ✅ **`POST /api/trips/[tripId]/ping`** — done 2026-10-18. `lib/trips/ping.ts` (testable core) + thin route handler. Auth (driver-only, 403 otherwise), rate-limit 1 req/s per driver, Zod lat/lng/accuracyM validation, writes `WorkerLocationPing`, returns `{ tripStatus, pingId }`. 12/12 tests, tsc clean, next build clean. | `waquor/src/app/api/trips/[tripId]/ping/route.ts`, `waquor/lib/trips/ping.ts`, `waquor/tests/trips-ping.test.ts` | Mobile driver GPS outbox queue now drains correctly. |
+| 1 | ✅ **`POST /api/trips/[tripId]/ping`** — done 2026-10-18. `lib/trips/ping.ts` (testable core) + `withMetrics`-instrumented route handler + `trackEvent('driver.ping')`. Explicit `USR_DRIVER` 403 gate before rate-limit/DB, rate-limit 1 req/s per driver, Zod validation (`lat`/`latitude`, `lng`/`longitude`, nullish `accuracyM`/`accuracy`), writes `WorkerLocationPing`, returns `{ ok, success, tripStatus, pingId, receivedAt }`. 17/17 tests, tsc clean, next build clean. | `waquor/src/app/api/trips/[tripId]/ping/route.ts`, `waquor/lib/trips/ping.ts`, `waquor/tests/trips-ping.test.ts` | Mobile driver GPS outbox queue now drains correctly. |
 | 2 | **Build `PATCH /api/trips/[tripId]`** with a state-machine guard (REQUESTED→ACCEPTED→IN_PROGRESS→COMPLETED), role-gated to driver + requester | new file `waquor/src/app/api/trips/[tripId]/route.ts` | Mobile Trip detail screen's accept/start/complete buttons call this today — also 404. |
 | 3 | **Instrument top ~15 API routes with `withMetrics`** from `lib/analytics.ts` | `waquor/src/app/api/{orders,search,projects,tenders,bids,wallet,escrow,messages,…}/route.ts` | Without this the `RouteMetric` table only fills from manually tagged routes. The admin p95 board renders empty today. |
 | 4 | **Wire `orderStatusChanged`** into the order PATCH route | `waquor/src/app/api/orders/[orderId]/route.ts` | Helper is live; caller is not. |
@@ -264,9 +265,9 @@ After these ten, the next natural chunks are the Saudi payment adapter (needs me
 
 ```
 waquor/prisma/schema.prisma            74 models
-waquor/src/app/api/**/route.ts         80 API routes
+waquor/src/app/api/**/route.ts         82 API routes
 waquor/src/app                         80 pages (115 after Next.js split points)
-waquor/tests/*.test.ts                 113 passing cases
+waquor/tests/*.test.ts                 117 passing cases
 mobile/app/**/*.tsx                    ~32 screens
 mobile/tests/pure.test.ts              6 passing cases
 services/bim/                          11 pytest cases, FastAPI + IfcOpenShell + Docker

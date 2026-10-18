@@ -1,0 +1,8 @@
+# Runtime pins — update together.
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+python-multipart==0.0.17
+pydantic==2.9.2
+# IfcOpenShell wheel ships with libraries built in; pick the version that
+# matches the Python base image we use in Dockerfile.
+ifcopenshell==0.8.1
