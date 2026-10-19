@@ -218,7 +218,8 @@ These are concrete code tasks with no external dependency:
 | 4 | ✅ **Wire `orderStatusChanged`** into order PATCH — done 2026-10-19. Created `waquor/src/app/api/orders/[orderId]/route.ts` with PATCH handler. Buyer can cancel; vendor moves forward (ACCEPTED→PACKED→DISPATCHED→DELIVERED); admin any. Calls `orderStatusChanged` (buyer email+push+in-app + SMS on SHIPPED/DELIVERED, vendor on CANCELLED). Fire-and-forget `void`. tsc clean, build clean. | `waquor/src/app/api/orders/[orderId]/route.ts` | Order status changes now notify both parties correctly. |
 | 5 | ✅ **Wire `milestoneApproved`** into milestone approve — done 2026-10-19. Updated `waquor/src/app/api/milestones/[milestoneId]/approve/route.ts`. After approval + escrow release, calls `milestoneApproved({ milestoneId, projectId, payeeId: milestone.payeeId, amount })` for payee (email+push+in-app). Fire-and-forget `void`. tsc clean, build clean. | `waquor/src/app/api/milestones/[milestoneId]/approve/route.ts` | Milestone payees now get notified when funds are released. |
 | 6 | ✅ **Wire `disputeOpened`** into dispute POST — done 2026-10-19. Updated `waquor/src/app/api/disputes/route.ts`. After creating dispute, calls `disputeOpened({ disputeId, raisedById, counterpartyId })` — counterparty gets email+push+in-app, platform admins get in-app. Fire-and-forget `void`. tsc clean, build clean. | `waquor/src/app/api/disputes/route.ts` | Dispute counterparties and admins now notified immediately. |
-| 7 | **Haversine `lib/geo.ts`** + geo-boost consumer in `lib/search/engine.ts` | Enables SRCH-13 geo ranking against the lat/lng already in `Address` and `Vendor`. |
+| 7a | ✅ **Haversine `lib/geo.ts`** — done 2026-10-19. Pure functions: `haversineDistance(lat1,lng1,lat2,lng2)` in km, `boundingBox(lat,lng,radiusKm)` for SQL pre-filtering, `isWithinRadius` for exact check. Pole clamping (|lat|>89° → full lat/lng range), antimeridian wrap detection → full lng range. 11 exhaustive tests: zero distance, symmetry, Riyadh→Jeddah≈850km±5, Riyadh→Dammam≈391km±5, antipodal, pole-equator, bounding box Riyadh 100km, equator 111km, pole clamping, wrap, isWithinRadius. 165 tests pass, tsc clean, next build clean. | `waquor/lib/geo.ts`, `waquor/tests/geo.test.ts` | Foundation for geo ranking (SRCH-13) and proximity search. |
+| 7b | **Geo-boost consumer in `lib/search/engine.ts`** | Enables SRCH-13 geo ranking against the lat/lng already in `Address` and `Vendor`. |
 | 8 | **Scheduled-post cron reader** — reads `SocialPost where status='SCHEDULED' AND scheduledFor <= now()` and dispatches via the matching adapter | A single `/api/cron/dispatch-social` route guarded by a shared secret, until a cron substrate is picked. |
 | 9 | **Instagram + TikTok adapter publish paths** — today they return `ok:true` without calling the real APIs | `lib/social/providers/{instagram,tiktok}.ts` | Admin UI already posts; adapter is the only gap. |
 | 10 | **Finance console UI** (SRS §10.12) — payouts queue, reconciliation, chargeback log | `waquor/src/app/dashboard/admin/finance/` | APIs exist; UI is empty. |
@@ -267,7 +268,7 @@ After these ten, the next natural chunks are the Saudi payment adapter (needs me
 waquor/prisma/schema.prisma            74 models
 waquor/src/app/api/**/route.ts         82 API routes
 waquor/src/app                         80 pages (115 after Next.js split points)
-waquor/tests/*.test.ts                 152 passing cases
+waquor/tests/*.test.ts                 165 passing cases
 mobile/app/**/*.tsx                    ~32 screens
 mobile/tests/pure.test.ts              6 passing cases
 services/bim/                          11 pytest cases, FastAPI + IfcOpenShell + Docker
