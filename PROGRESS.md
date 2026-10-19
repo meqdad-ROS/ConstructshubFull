@@ -232,6 +232,18 @@ These are concrete code tasks with no external dependency:
 - **Operational:** cloud region for in-region hosting (Riyadh zone), pen-test vendor selection, EAS code-signing certs for mobile OTAs, merchant bank account for payouts.
 - **Scope decisions:** whether AI assistant (§9.4) ships in v1 or v2; whether the Fatoora prod cutover is same-day or staged.
 
+### 5.4 What is NOT healthy (Admin Console issues found in [admin-console-audit.md](docs/reviews/admin-console-audit.md))
+
+- **2 Admin Pages Crash as Soon as Real Data Arrives:**
+  1. **Verifications (`waquor/src/app/dashboard/admin/verifications/page.tsx` lines 81–92):** Looks fine when empty, but **crashes with a 500 Server Error** (`Event handlers cannot be passed to Client Component props`) the moment an unverified user exists because `Approve`/`Reject` pass `onClick={() => {}}` inside a Next.js Server Component.
+  2. **Finance (`waquor/src/app/dashboard/admin/finance/page.tsx` lines 217–271):** Looks fine when empty (aside from rendering **two sidebars and two top bars side-by-side** via a duplicate `<DashboardShell>` + hardcoded `dir="rtl"`), but **crashes in the browser** (`Objects are not valid as a React child`) the moment a `Payout` or refunded `EscrowHold` exists because `GET /api/payouts` (`waquor/src/app/api/payouts/route.ts` lines 64–69) returns a nested `User` object (including `passwordHash`) where the UI expects a string, and `GET /api/admin/finance/chargebacks` omits `status` on `refundedEscrows` while returning `raisedBy`/`recipient`/`payer` + `failureReason`/`frozenReason` + `requestedAt`/`refundedAt` instead of `party`/`reason`/`createdAt`.
+- **Dead Links & Dead Buttons in Admin:**
+  - Clicking `View →` on Users (`waquor/src/app/dashboard/admin/users/page.tsx` line 71 → `/dashboard/admin/users/[id]`), `Review →` on Disputes (`waquor/src/app/dashboard/admin/disputes/page.tsx` line 73 → `/dashboard/admin/disputes/[id]`), or `Open →` on Support (`waquor/src/app/dashboard/admin/support/page.tsx` line 75 → `/dashboard/admin/support/[id]`) leads to **404 Not Found**.
+  - `Approve` and `Reject` buttons on `/dashboard/admin/verifications` are literal no-ops (`onClick={() => {}}`).
+  - **Audit Log (`waquor/src/app/dashboard/admin/audit/page.tsx` lines 14–18)** and Overview Audit Trail always show `0` rows because they query `prisma.auditLog` while `auditLog()` (`waquor/lib/security.ts` lines 102–120) writes to `prisma.auditEvent` (which has 21+ rows).
+  - **Feature Flags (`waquor/src/app/dashboard/admin/config/page.tsx` lines 31–45)** renders blank because default flags sit inside `.catch()`, which never fires on a `200 OK` empty `flags: []` response; Platform Settings on the same page are 6 static text rows.
+  - **Missing Sidebar Links & Missing Moderation Console:** `Finance` (`/dashboard/admin/finance`), `Analytics` (`/dashboard/admin/analytics`), and `Search Console` (`/dashboard/admin/search`) have no links in `NAV_BY_ROLE.USR_ADMIN` (`waquor/components/dashboard/DashboardShell.tsx` lines 103–112), and SRS §10.13 Content & Moderation (`/dashboard/admin/moderation`) is unbuilt (**404 Not Found**).
+
 ---
 
 ## 6. Conventions worth knowing before you edit anything
