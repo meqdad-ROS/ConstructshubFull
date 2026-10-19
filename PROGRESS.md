@@ -1,7 +1,7 @@
 # BanahBuild / ConstructsHub — Project Progress & Handoff
 
 > **Audience:** any AI agent (or human developer) picking up this project with no prior conversation context.
-> **Last updated:** 2026-10-18
+> **Last updated:** 2026-10-20
 > **Latest commit on `main`:** `36e72b1 full project before vacation complete`
 
 Read this file first. It is self-contained: every claim about the codebase is anchored to a path, a model, or a verifiable command. Nothing here depends on earlier conversation turns.
@@ -222,7 +222,7 @@ These are concrete code tasks with no external dependency:
 | 7b | ✅ **Geo-boost consumer in `lib/search/engine.ts`** — done 2026-10-19. `search()` gains optional 6th param `userLocation: { lat, lng }`; threaded through `SearchEngine` interface and `engine-opensearch.ts` (opensearch impl keeps TODO stub for Phase 2 function_score). Postgres score adds `CASE WHEN "geoLat"/"geoLng" ∈ boundingBox(lat,lng,RADIUS) THEN W_GEO * EXP(-haversine_km / GEO_HALFLIFE_KM) ELSE 0 END` — CASE short-circuits trig outside the box so we never haversine the whole index. Weights env-tunable (`SEARCH_W_GEO=0.5`, `SEARCH_GEO_HALFLIFE_KM=20`, `SEARCH_GEO_RADIUS_KM=200`); W_TEXT=1.0 still dominates. No-location path is bit-identical to the pre-geo formula (null / undefined / NaN / +Inf / negative all collapse to 0). 6 new tests in `tests/search-geo.test.ts` (nearest > far at equal text, no-location unchanged, non-finite collapses, relevance dominance, monotonic decay, distance=0 strictly > no-geo). 171/171 tests pass, tsc clean, next build clean. | `waquor/lib/search/engine.ts`, `waquor/lib/search/interface.ts`, `waquor/lib/search/engine-opensearch.ts`, `waquor/tests/search-geo.test.ts` | SRCH-13 live for the Postgres engine; opensearch deferred to Phase 2. |
 | 8 | ✅ **Scheduled-post cron route** — done 2026-10-19. Created `waquor/src/app/api/cron/dispatch-social/route.ts`. Guarded by `x-cron-secret` header (timing-safe compare vs `CRON_DISPATCH_SECRET`). Finds `SocialPost` where `status='SCHEDULED' AND scheduledFor <= now()`, claims via atomic `SCHEDULED → POSTING` transition (idempotent), decrypts `accessTokenEnc`, calls matching provider `publish()`, marks `POSTED` with `providerId`/`publishedAt` or `FAILED` with `errorMessage`. Batches up to 50. 7 unit tests (secret reject, wrong secret, no due posts, due post dispatches, not-due skips, idempotent double-invoke, provider failure). 178/178 tests pass, tsc clean, next build clean. Post-landing fixups (0df1a3e): swap `⚠️` for ASCII in test console.log — Node 24's test IPC choked on the variation selector under default concurrency; and updated `schema.prisma` SocialPost.status comment to document the transient `POSTING` claim lock (comment-only, no migration). | `waquor/src/app/api/cron/dispatch-social/route.ts`, `waquor/tests/cron-dispatch-social.test.ts` | Any external scheduler (cron, GitHub Actions, Vercel Cron) can hit this endpoint; idempotent by design. |
 | 9 | ✅ **Instagram + TikTok adapter publish paths** — done 2026-10-19. Replaced stub paths with real API calls. **Instagram**: three-step container flow — `POST /{ig-user-id}/media` (image_url or `media_type=REELS` + video_url based on extension) → `GET /{creation_id}?fields=status_code` polled until FINISHED (env-tunable budget `INSTAGRAM_POLL_MAX_ATTEMPTS` / `INSTAGRAM_POLL_INTERVAL_MS`) → `POST /{ig-user-id}/media_publish`. **TikTok**: `POST /v2/post/publish/video/init/` with `PULL_FROM_URL` + `post_info` (direct) or inbox variant via `TIKTOK_PUBLISH_MODE=inbox`; TikTok returns 200 even on auth errors, so we also inspect `error.code` to classify. **Typed errors**: extended `PublishResult` with `errorCode` discriminator (`TOKEN_EXPIRED` / `RATE_LIMITED` / `CONTAINER_NOT_READY` / `MEDIA_REQUIRED` / `UPSTREAM_ERROR` / `INVALID_RESPONSE`) + `requestId` from `fbtrace_id` / `log_id` so admin UI can surface a Reconnect button on token-expired vs a retry hint on rate-limited. **PII discipline**: logs `[social.publish:instagram]` / `[social.publish:tiktok]` as JSON with action + status + errorCode + requestId; never logs tokens, media URLs, or post content. **Mock adapter** at `lib/social/providers/mock.ts` for tests. **Call sites** (`cron/dispatch-social`, `api/social/posts`) now thread `providerUserId` from the account into `PublishInput`. **Tests**: 15 new HTTP-boundary tests (fetch stubbed with ordered expectations; unmatched call fails loudly) covering IG happy path, missing providerUserId, no media, container IN_PROGRESS timeout, 401 OAuthException, 429, container ERROR state, video→REELS routing; TikTok happy path, no media, access_token_invalid, rate_limit_exceeded, missing publish_id, inbox mode; mock adapter script replay. 193/193 tests pass, tsc clean, next build clean. | `waquor/lib/social/types.ts`, `waquor/lib/social/providers/{instagram,tiktok,mock,facebook,x,linkedin}.ts`, `waquor/src/app/api/cron/dispatch-social/route.ts`, `waquor/src/app/api/social/posts/route.ts`, `waquor/tests/social-publish.test.ts` | Admin UI can now distinguish token-expired (prompt reconnect) from rate-limited (retry later) via `result.errorCode`. |
-| 10 | **Finance console UI** (SRS §10.12) — payouts queue, reconciliation, chargeback log | `waquor/src/app/dashboard/admin/finance/` | APIs exist; UI is empty. |
+| 10 | ✅ **Finance console UI** (SRS §10.12) — done 2026-10-20. Payouts queue (list, filter by status/date/org, approve/reject with reason), Reconciliation view (ledger vs escrow balance with drift highlighting), Chargeback log (disputes, failed payouts, returns, escrow refunds). Uses shared DashboardShell, DataTable, StatCard, StatusBadge. Admin-gated via middleware. Arabic RTL-safe. 44 new tests (filter logic, status tone mapping, currency/date formatting, API integration). 237/237 tests pass, tsc clean, next build clean. | `waquor/src/app/dashboard/admin/finance/page.tsx`, `waquor/src/app/api/admin/finance/reconciliation/route.ts`, `waquor/src/app/api/admin/finance/chargebacks/route.ts`, `waquor/src/app/api/payouts/route.ts` (enhanced), `waquor/tests/finance-console.test.ts` | Admin finance console complete per SRS §10.12. |
 
 ### 5.3 Depends on the user — I cannot do these alone
 - **Credentials:** Saudi payment merchant creds, ZATCA CSID, Twilio A2P 10DLC approval, SendGrid domain auth, FCM/APNs cert signing, bSDD API token, Google Vision / YOLOv8n hosting, Mapbox or Google Maps tile licence, Sentry/Bugsnag project DSN.
@@ -255,7 +255,7 @@ P1  (4,5,6) status/milestone/dispute wires →  full event-driven notify loop cl
 P1  (7) geo helper + search boost          →  SRCH-13 unlocks
 P2  (8) scheduled-post cron reader         →  social scheduler lights up
 P2  ✅(9) IG + TikTok real publish calls   →  social fan-out ships
-P2  (10) Finance console UI                →  admin set complete
+P2  ✅(10) Finance console UI              →  admin set complete
 ```
 
 After these ten, the next natural chunks are the Saudi payment adapter (needs merchant creds), the ZATCA sandbox dry-run (needs CSID), and the scheduler substrate decision.
@@ -266,9 +266,9 @@ After these ten, the next natural chunks are the Saudi payment adapter (needs me
 
 ```
 waquor/prisma/schema.prisma            74 models
-waquor/src/app/api/**/route.ts         82 API routes
-waquor/src/app                         80 pages (115 after Next.js split points)
-waquor/tests/*.test.ts                 193 passing cases
+waquor/src/app/api/**/route.ts         84 API routes
+waquor/src/app                         81 pages (116 after Next.js split points)
+waquor/tests/*.test.ts                 237 passing cases
 mobile/app/**/*.tsx                    ~32 screens
 mobile/tests/pure.test.ts              6 passing cases
 services/bim/                          11 pytest cases, FastAPI + IfcOpenShell + Docker
