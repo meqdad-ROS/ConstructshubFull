@@ -1,0 +1,210 @@
+# ConstructsHub platform cron (SRS §8, §8.6, §9.3; launch-blocker §5.1-6).
+#
+# Design per docs/decisions/cron-substrate.md: Kubernetes CronJob resources
+# invoke authenticated Next.js API routes under /api/cron/*. The business
+# logic lives in waquor; the CronJob pods are a thin curl shim that handles
+# scheduling only.
+#
+# Secret: CRON_DISPATCH_SECRET lives in the `cron-secrets` Secret. The pod
+# reads it via env and sends it as the `x-cron-secret` header; the handler
+# compares timing-safe. Rotate the secret and `kubectl rollout restart` to
+# propagate — a stale pod only retries one more time before `startingDeadline`
+# expires.
+#
+# Internal-only. The CronJob targets the in-cluster service name
+# `http://waquor.constructhub-staging.svc.cluster.local` so the traffic never
+# leaves the namespace. The public ingress is irrelevant here.
+#
+# One-at-a-time. `concurrencyPolicy: Forbid` means a tick that's still
+# running blocks the next schedule — the business logic is idempotent, but
+# running two instances is wasted work.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cron-secrets
+  namespace: constructhub-staging
+type: Opaque
+stringData:
+  # Replace at apply time (openssl rand -hex 32) or sync from Vault / ESO.
+  CRON_DISPATCH_SECRET: "REPLACE-with-openssl-rand-hex-32"
+---
+# -----------------------------------------------------------------------------
+# (1) 72-h escrow auto-release (SRS §8 C-16).
+#
+# Fires every 15 minutes so a hold whose releaseAfter has just passed is
+# released within one quarter-hour. The handler batches up to 100 holds per
+# tick, so even a thundering-herd of expirations clears in a few ticks.
+# -----------------------------------------------------------------------------
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-release-escrow
+  namespace: constructhub-staging
+  labels:
+    app: cron
+    job: release-escrow
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: curl
+              image: curlimages/curl:8.11.1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: cron-secrets
+                      key: CRON_DISPATCH_SECRET
+              # -f fails on non-2xx so the pod exits non-zero and k8s records
+              # the failure. --max-time caps the whole call so a hung handler
+              # cannot pin the pod past activeDeadlineSeconds.
+              command: ["sh", "-c"]
+              args:
+                - |
+                  curl -fsS --max-time 480 \
+                    -X POST \
+                    -H "x-cron-secret: $CRON_SECRET" \
+                    http://waquor.constructhub-staging.svc.cluster.local/api/cron/release-escrow
+              resources:
+                requests: { cpu: "20m", memory: "32Mi" }
+                limits:   { cpu: "100m", memory: "64Mi" }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+---
+# -----------------------------------------------------------------------------
+# (2) ZATCA submission trigger (SRS §8.6).
+#
+# Fires hourly. The simplified-invoice SLA is "within 24 h of issuance", so
+# an hourly tick gives us 23 h of catch-up head-room on any provider or
+# connectivity blip. The handler batches up to 25 DRAFTs per tick.
+# -----------------------------------------------------------------------------
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-dispatch-zatca
+  namespace: constructhub-staging
+  labels:
+    app: cron
+    job: dispatch-zatca
+spec:
+  schedule: "17 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: curl
+              image: curlimages/curl:8.11.1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: cron-secrets
+                      key: CRON_DISPATCH_SECRET
+              command: ["sh", "-c"]
+              args:
+                - |
+                  curl -fsS --max-time 840 \
+                    -X POST \
+                    -H "x-cron-secret: $CRON_SECRET" \
+                    http://waquor.constructhub-staging.svc.cluster.local/api/cron/dispatch-zatca
+              resources:
+                requests: { cpu: "20m", memory: "32Mi" }
+                limits:   { cpu: "100m", memory: "64Mi" }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+---
+# -----------------------------------------------------------------------------
+# (3) Social scheduled posts (SRS §9.3).
+#
+# Mounts the existing /api/cron/dispatch-social route (shipped in task #8)
+# onto the same CronJob substrate as the other two jobs. Fires every 5
+# minutes so a post scheduled on the minute is live within one tick.
+# -----------------------------------------------------------------------------
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-dispatch-social
+  namespace: constructhub-staging
+  labels:
+    app: cron
+    job: dispatch-social
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 240
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: curl
+              image: curlimages/curl:8.11.1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: cron-secrets
+                      key: CRON_DISPATCH_SECRET
+              command: ["sh", "-c"]
+              args:
+                - |
+                  curl -fsS --max-time 180 \
+                    -X POST \
+                    -H "x-cron-secret: $CRON_SECRET" \
+                    http://waquor.constructhub-staging.svc.cluster.local/api/cron/dispatch-social
+              resources:
+                requests: { cpu: "20m", memory: "32Mi" }
+                limits:   { cpu: "100m", memory: "64Mi" }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
