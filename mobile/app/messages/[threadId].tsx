@@ -47,7 +47,7 @@ export default function ChatScreen() {
     if (!text) return;
     setDraft('');
     const optimisticId = `tmp-${Date.now()}`;
-    qc.setQueryData<ThreadView>(['messages', 'thread', threadId], (prev) =>
+    qc.setQueryData<ThreadView>(['messages', 'thread', threadId], (prev: ThreadView | undefined) =>
       prev
         ? {
             ...prev,

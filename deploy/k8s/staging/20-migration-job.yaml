@@ -42,9 +42,14 @@ spec:
         fsGroup: 1001
       containers:
         - name: migrate
-          image: constructhub/waquor:staging    # overwritten by CI with ${IMAGE_TAG}
+          # Dedicated migrate image (Dockerfile `migrate` stage) carries the
+          # full node_modules tree Prisma CLI needs at runtime. Built by CI
+          # alongside the slim serving image and tagged with the same SHA.
+          image: constructhub/waquor-migrate:staging    # overwritten by CI with ${IMAGE_TAG}
           imagePullPolicy: IfNotPresent
-          command: ["npx", "--yes", "prisma", "migrate", "deploy", "--schema=./prisma/schema.prisma"]
+          # Image CMD already runs `prisma migrate deploy`; command: here only
+          # for readability + to make the intent explicit in `kubectl describe`.
+          command: ["prisma", "migrate", "deploy", "--schema=./prisma/schema.prisma"]
           envFrom:
             - secretRef:
                 name: waquor-secrets

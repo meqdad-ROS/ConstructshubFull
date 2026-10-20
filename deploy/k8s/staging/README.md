@@ -8,9 +8,11 @@ kubectl apply -f 00-namespace.yaml
 # The committed 10-secrets.example.yaml is a template, not a usable secret.
 kubectl apply -f ./my-secrets.yaml     # provided out-of-band
 
-# Each release:
+# Each release — CI builds two tags:
+#   constructhub/waquor:${IMAGE_TAG}         (serving image, standalone bundle)
+#   constructhub/waquor-migrate:${IMAGE_TAG} (migrate image, full node_modules)
 export IMAGE_TAG=<git-sha-or-semver>
-sed "s|constructhub/waquor:staging|constructhub/waquor:${IMAGE_TAG}|g" 20-migration-job.yaml \
+sed "s|constructhub/waquor-migrate:staging|constructhub/waquor-migrate:${IMAGE_TAG}|g" 20-migration-job.yaml \
   | kubectl apply -f -
 kubectl -n constructhub-staging wait --for=condition=complete job/waquor-migrate --timeout=10m
 
@@ -49,6 +51,30 @@ release aborts in one of two places:
    code, then contract in a later release. If a migration must be reverted,
    write a **new** forward-migration that undoes it; never `prisma migrate
    reset` in production.
+
+## Known issue — repo migration trail (independent of this stack)
+
+The repo's `waquor/prisma/migrations/20260401000000_search_indexes` references
+`SearchDocument`, a table the preceding `20250706154843_init` migration does
+not create — the schema trail is out of sync with the current
+`schema.prisma`. `prisma migrate deploy` therefore errors with
+`P3018 … relation "SearchDocument" does not exist` on a fresh database.
+
+Fix path (**separate task**, not CI/CD scope): regenerate the init migration
+from the current schema via
+`prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`
+and squash the search-indexes migration behind it, or add `SearchDocument` /
+every missing model to a new preceding migration.
+
+Local sanity-check for THIS stack (bootstrap a fresh db directly from the
+schema with `prisma db push` so the serving container can boot):
+
+```sh
+docker run --rm --network constructhub_waquor-net \
+  -e DATABASE_URL='postgresql://constructhub:$PG@waquor-db:5432/constructhub?schema=public' \
+  constructhub/waquor-migrate:latest \
+  prisma db push --accept-data-loss --skip-generate
+```
 
 ## Secrets management
 

@@ -41,21 +41,22 @@ services:
       - waquor-net
 
   # One-shot container: `prisma migrate deploy` runs before `waquor` boots.
-  # Mirrors the k8s pre-rollout migration Job defined in deploy/k8s/staging/.
+  # Mirrors the k8s pre-rollout migration Job (deploy/k8s/staging/20-migration-job.yaml).
+  # Built from the `migrate` stage so the full node_modules tree is present
+  # (Prisma CLI needs jiti + @prisma/config at runtime, which are pruned
+  # from the standalone Next bundle used by the serving container).
   waquor-migrate:
     build:
       context: ./waquor
       dockerfile: Dockerfile
-    image: constructhub/waquor:latest
+      target: migrate
+    image: constructhub/waquor-migrate:latest
     container_name: constructhub-migrate
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-constructhub}:${POSTGRES_PASSWORD}@waquor-db:5432/${POSTGRES_DB:-constructhub}?schema=public
     depends_on:
       waquor-db:
         condition: service_healthy
-    # The runtime image ships `prisma` CLI under node_modules; run through npx
-    # against the schema we copied in during build.
-    command: ["npx", "--yes", "prisma", "migrate", "deploy", "--schema=./prisma/schema.prisma"]
     restart: "no"
     networks:
       - waquor-net
@@ -157,9 +158,11 @@ configs:
         proxy_read_timeout 300s;
         location / {
           proxy_pass http://bim-parser:8081;
-          proxy_set_header X-BIM-Timestamp $http_x_bim_timestamp;
-          proxy_set_header X-BIM-Signature $http_x_bim_signature;
-          proxy_set_header Content-Type $http_content_type;
+          # $$ escapes the dollar from compose interpolation so nginx receives
+          # the literal $http_* request-header variables.
+          proxy_set_header X-BIM-Timestamp $$http_x_bim_timestamp;
+          proxy_set_header X-BIM-Signature $$http_x_bim_signature;
+          proxy_set_header Content-Type $$http_content_type;
         }
       }
 

@@ -194,12 +194,24 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Build waquor image
+      - name: Build waquor runtime image
         uses: docker/build-push-action@v6
         with:
           context: waquor
           file: waquor/Dockerfile
+          target: runtime
           tags: constructhub/waquor:ci
+          load: true
+          cache-from: type=gha,scope=waquor
+          cache-to: type=gha,scope=waquor,mode=max
+
+      - name: Build waquor-migrate image
+        uses: docker/build-push-action@v6
+        with:
+          context: waquor
+          file: waquor/Dockerfile
+          target: migrate
+          tags: constructhub/waquor-migrate:ci
           load: true
           cache-from: type=gha,scope=waquor
           cache-to: type=gha,scope=waquor,mode=max
