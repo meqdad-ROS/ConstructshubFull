@@ -1,0 +1,71 @@
+# Pre-rollout migration Job (SRS NFR-OPS, launch-blocker §5.1-5).
+#
+# Idempotent: `prisma migrate deploy` only applies new migrations; re-runs
+# with no pending migrations exit 0. Each release ships with a new Job name
+# ($IMAGE_TAG) so a failed migration never blocks a resubmission.
+#
+# Workflow (CI / CD system):
+#   1. kubectl apply the Job manifest with image tag = ${IMAGE_TAG}
+#   2. kubectl wait --for=condition=complete job/waquor-migrate-${IMAGE_TAG}
+#      --timeout=10m
+#   3. If the Job succeeds, roll the Deployment to the same image tag.
+#   4. If the Job fails, DO NOT roll the Deployment. Investigate, then
+#      resubmit (new tag). The previous Deployment keeps serving.
+#
+# Rollback: because the Deployment is unchanged until the migration passes,
+# a bad migration causes zero traffic impact; just redeploy the previous
+# image tag (`kubectl rollout undo deployment/waquor` if a bad image did
+# slip through).
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: waquor-migrate
+  namespace: constructhub-staging
+  labels:
+    app: waquor
+    component: migration
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app: waquor
+        component: migration
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: migrate
+          image: constructhub/waquor:staging    # overwritten by CI with ${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          command: ["npx", "--yes", "prisma", "migrate", "deploy", "--schema=./prisma/schema.prisma"]
+          envFrom:
+            - secretRef:
+                name: waquor-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

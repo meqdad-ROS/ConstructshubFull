@@ -1,0 +1,223 @@
+# Construct-Hub CI pipeline (launch-blocker §5.1-5).
+#
+# Pipeline stages, all in one workflow so a single run gates every merge to
+# `main`:
+#   1. web      — install, Prisma generate, typecheck, test, next build
+#   2. mobile   — install, typecheck, test
+#   3. bim      — build the sandboxed BIM image, run pytest *inside* it
+#   4. docker   — build the production web image (depends on web passing)
+#
+# Caches:
+#   * actions/setup-node caches ~/.npm (keyed on package-lock.json)
+#   * waquor/node_modules is cached between jobs on the same lockfile hash
+#   * The Prisma query engine lives in waquor/node_modules/.prisma — cached
+#     alongside node_modules so we don't re-download it per job.
+#   * Docker image layers are cached via GitHub's buildx cache backend.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20.18.1"
+  PYTHON_VERSION: "3.12"
+  # Prisma 6: fail fast if the schema cannot generate.
+  PRISMA_HIDE_UPDATE_MESSAGE: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Web — the Next.js app (waquor/).
+  # ---------------------------------------------------------------------------
+  web:
+    name: web (typecheck + test + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: waquor
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: waquor/package-lock.json
+
+      # Cache waquor/node_modules (which includes the Prisma generated client
+      # and its engine binaries). Key is the lockfile hash + Prisma schema
+      # hash — any change to either invalidates the cache.
+      - name: Cache node_modules + Prisma engine
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            waquor/node_modules
+            waquor/node_modules/.prisma
+            waquor/node_modules/@prisma
+          key: >-
+            node-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('waquor/package-lock.json') }}-${{ hashFiles('waquor/prisma/schema.prisma') }}
+          restore-keys: |
+            node-${{ runner.os }}-${{ env.NODE_VERSION }}-
+
+      - name: Install (npm ci)
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund
+
+      - name: Prisma generate (idempotent)
+        run: npx prisma generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test:unit
+
+      - name: Build (next build, standalone)
+        env:
+          # Build-time env — placeholder values that satisfy env lookups
+          # without reaching any live service. Real secrets ship via k8s.
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres?schema=public
+          NEXTAUTH_SECRET: ci-nextauth-secret-placeholder
+          NEXTAUTH_URL: http://localhost:3000
+        run: npx next build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: waquor-next-build
+          path: |
+            waquor/.next/standalone
+            waquor/.next/static
+          retention-days: 3
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # 2. Mobile — Expo app (mobile/).
+  # ---------------------------------------------------------------------------
+  mobile:
+    name: mobile (typecheck + test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Cache mobile/node_modules
+        id: cache-mobile-modules
+        uses: actions/cache@v4
+        with:
+          path: mobile/node_modules
+          key: >-
+            mobile-${{ runner.os }}-${{ env.NODE_VERSION }}-${{ hashFiles('mobile/package-lock.json') }}
+
+      - name: Install (npm ci)
+        if: steps.cache-mobile-modules.outputs.cache-hit != 'true'
+        run: npm ci --no-audit --no-fund --ignore-scripts
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # 3. BIM — build the sandboxed image, run pytest INSIDE it so the test env
+  #    matches production exactly (python 3.12-slim + ifcopenshell wheels).
+  # ---------------------------------------------------------------------------
+  bim:
+    name: bim (image + pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build BIM image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/bim
+          file: services/bim/Dockerfile
+          tags: constructhub/bim:ci
+          load: true
+          cache-from: type=gha,scope=bim
+          cache-to: type=gha,scope=bim,mode=max
+
+      - name: Install pytest in the image (dev extras)
+        run: |
+          docker run --rm -u 0:0 --name bim-pytest-prep \
+            -v "$PWD/services/bim:/src:ro" \
+            constructhub/bim:ci \
+            pip install --no-cache-dir pytest httpx
+
+      # Run pytest with the production (read-only) layout. We mount tests from
+      # the host so we never rebuild the image to iterate on tests.
+      - name: Run pytest (inside sandbox)
+        run: |
+          docker run --rm \
+            --network none \
+            -e PYTHONPATH=/app \
+            -v "$PWD/services/bim/tests:/app/tests:ro" \
+            constructhub/bim:ci \
+            sh -c "pip install --no-cache-dir --user pytest httpx && python -m pytest -q tests"
+
+  # ---------------------------------------------------------------------------
+  # 4. Docker — build the production web image. Depends on web passing so we
+  #    don't push a broken image.
+  # ---------------------------------------------------------------------------
+  docker:
+    name: docker (waquor image)
+    runs-on: ubuntu-latest
+    needs: [web]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build waquor image
+        uses: docker/build-push-action@v6
+        with:
+          context: waquor
+          file: waquor/Dockerfile
+          tags: constructhub/waquor:ci
+          load: true
+          cache-from: type=gha,scope=waquor
+          cache-to: type=gha,scope=waquor,mode=max
+
+      # Smoke test: boot the image with a placeholder DATABASE_URL and curl
+      # /api/health. The container should answer 200 within 30 s.
+      - name: Smoke test (healthcheck)
+        run: |
+          docker run -d --rm --name waquor-smoke \
+            -e DATABASE_URL='postgresql://postgres:postgres@localhost:5432/postgres?schema=public' \
+            -e NEXTAUTH_SECRET='ci-smoke' \
+            -e NEXTAUTH_URL='http://localhost:3000' \
+            -p 3000:3000 \
+            constructhub/waquor:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/api/health >/dev/null; then
+              echo "healthy after ${i}s"; docker stop waquor-smoke; exit 0
+            fi
+            sleep 1
+          done
+          echo "waquor did not become healthy in 30 s"; docker logs waquor-smoke; docker stop waquor-smoke; exit 1

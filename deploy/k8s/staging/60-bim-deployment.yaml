@@ -1,0 +1,112 @@
+# BIM sandbox (SRS §6.5, NFR-SEC-11).
+#
+# Hardening mirrors services/bim/docker-compose.yml:
+#   * runAsNonRoot (uid 10001)
+#   * read-only root fs, emptyDir /uploads + /tmp
+#   * drop ALL caps, no privilege escalation, seccomp RuntimeDefault
+#   * NetworkPolicy denies all egress except the proxy service port
+#     (defined in 70-bim-service.yaml / 80-bim-netpol.yaml)
+# Resource limits enforce the 2 GB per upload cap from SRS §6.5.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bim-parser
+  namespace: constructhub-staging
+  labels:
+    app: bim-parser
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: bim-parser
+  template:
+    metadata:
+      labels:
+        app: bim-parser
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bim-parser
+          image: constructhub/bim:staging       # overwritten by CI
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8081
+          env:
+            - name: BIM_MAX_UPLOAD_BYTES
+              value: "2147483648"
+            - name: BIM_UPLOAD_DIR
+              value: /uploads
+          envFrom:
+            - secretRef:
+                name: bim-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "4Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: uploads
+              mountPath: /uploads
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: uploads
+          emptyDir:
+            sizeLimit: 4Gi
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bim-proxy
+  namespace: constructhub-staging
+  labels:
+    app: bim-parser
+spec:
+  type: ClusterIP
+  selector:
+    app: bim-parser
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+      protocol: TCP

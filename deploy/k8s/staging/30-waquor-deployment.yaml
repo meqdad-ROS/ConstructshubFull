@@ -1,0 +1,110 @@
+# Waquor Next.js deployment (staging).
+#
+# Shape:
+#   * 2 replicas minimum (RollingUpdate), scaled by HPA.
+#   * All env comes from Secrets (envFrom) — no plaintext in the manifest.
+#   * Non-root (1001:1001), read-only root fs, drop ALL caps, no privilege
+#     escalation.
+#   * /app/.next/cache is an emptyDir because Next 15 writes caches at runtime
+#     even with output:standalone.
+#   * Readiness + liveness probes hit /api/health; the container's own
+#     HEALTHCHECK is ignored by k8s but kept for `docker run` smoke tests.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: waquor
+  namespace: constructhub-staging
+  labels:
+    app: waquor
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: waquor
+  template:
+    metadata:
+      labels:
+        app: waquor
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: waquor
+          image: constructhub/waquor:staging   # overwritten by CI
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3000"
+            - name: HOSTNAME
+              value: "0.0.0.0"
+            # Point the app at the in-cluster BIM proxy service.
+            - name: BIM_SERVICE_URL
+              value: "http://bim-proxy.constructhub-staging.svc.cluster.local:8081"
+          envFrom:
+            - secretRef:
+                name: waquor-secrets
+            - secretRef:
+                # BIM_SERVICE_TOKEN → BIM_HMAC_SECRET alias handled in-app, or
+                # map explicitly via `env.valueFrom.secretKeyRef` if the app
+                # strictly expects BIM_HMAC_SECRET. Shown here as a secretRef
+                # for simplicity; swap to a key-level ref if preferred.
+                name: bim-secrets
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: next-cache
+              mountPath: /app/.next/cache
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: next-cache
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 128Mi
