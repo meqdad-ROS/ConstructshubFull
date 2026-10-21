@@ -1,0 +1,44 @@
+
+ZATCA Phase-2 sandbox dry-run — mode=mock env=sandbox
+
+✓ Device material ready
+  certPem: present (xAdES CertDigest + IssuerSerial live)
+
+── [standard-01] invoice built ─────────────────────────
+   uuid: 225e4218-0981-41e2-87e2-423cf4007fd8
+   invoiceHash: +wXkP44+oC2VYp1n4y5Z8yWZciqE8DrI5kmbBy+UeN8=
+   certDigest : YQh7LxZj0ER+qfAIxCic7e3vazx8Epr3XbtOxQHobUg=
+   signedPropsHash: +zD/rBmcDHxYlQSHqamPfHRm1FP0CoMmqYe+qj34cg8=
+   QR TLV (standard → informational):
+     tag  1 len  23 — seller.name                   ConstructsHub (dry-run)
+     tag  2 len  15 — seller.vatRegistrationNumber  300000000000003
+     tag  3 len  24 — issuedAt (ISO-8601)           2026-10-21T09:00:00.000Z
+     tag  4 len   7 — totalWithVat                  1366.00
+     tag  5 len   6 — vatAmount                     178.17
+     tag  6 len  32 — invoiceHash (base64)          +wXkP44+oC2VYp1n4y5Z8yWZciqE8DrI5kmbBy+U…
+     tag  7 len  70 — signature (base64)            MEQCIGvwdwe28t5NaYAgEyuq7P4/fhX2Ua4zUZm0…
+     tag  8 len  88 — publicKey DER (base64)        MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEQXcKaTIV…
+   → POST to Fatoora /invoices/clearance/single…
+   ← stage=CLEARED warnings=1 (Buyer VAT not registered on simulation feed)
+   📄 wrote /home/meqdad/My-Projects/Construct-Hub_Project/waquor/scripts/.dryrun-output/standard-01.json
+
+── [simplified-02] invoice built ─────────────────────────
+   uuid: 22ef3dc7-4f74-49f7-b2f9-7db64ddf71ad
+   invoiceHash: iVh4GOwsFRXRyyuVB2mu/U6Z0Lg0JjEzWkFZD4j4iQo=
+   certDigest : YQh7LxZj0ER+qfAIxCic7e3vazx8Epr3XbtOxQHobUg=
+   signedPropsHash: +zD/rBmcDHxYlQSHqamPfHRm1FP0CoMmqYe+qj34cg8=
+   QR TLV (simplified → embedded in B2C print):
+     tag  1 len  23 — seller.name                   ConstructsHub (dry-run)
+     tag  2 len  15 — seller.vatRegistrationNumber  300000000000003
+     tag  3 len  24 — issuedAt (ISO-8601)           2026-10-21T09:00:00.000Z
+     tag  4 len   7 — totalWithVat                  1366.00
+     tag  5 len   6 — vatAmount                     178.17
+     tag  6 len  32 — invoiceHash (base64)          iVh4GOwsFRXRyyuVB2mu/U6Z0Lg0JjEzWkFZD4j4…
+     tag  7 len  72 — signature (base64)            MEYCIQC5MX3kyPFeRRxgtmnYRS6opdxi3j2cg3Ip…
+     tag  8 len  88 — publicKey DER (base64)        MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEQXcKaTIV…
+   → POST to Fatoora /invoices/reporting/single…
+   ← stage=REPORTED warnings=2 (Buyer identity suppressed for B2C — using placeholder; Line extension amount rounded to 2 decimals)
+   📄 wrote /home/meqdad/My-Projects/Construct-Hub_Project/waquor/scripts/.dryrun-output/simplified-02.json
+
+✓ Dry-run complete.
+

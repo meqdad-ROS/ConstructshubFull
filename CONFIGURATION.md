@@ -422,7 +422,54 @@ Each is independently optional. Leave blank → that provider no-ops.
 | **OpenSearch** | `SEARCH_ENGINE=opensearch` (or `dual`), `OPENSEARCH_URL`, optional `OPENSEARCH_USER`/`OPENSEARCH_PASSWORD` | — |
 | **BIM sandbox** | `BIM_SERVICE_URL`, `BIM_SERVICE_TOKEN` | §4 |
 | **Social connectors** | `X_CLIENT_ID`/SECRET, `LINKEDIN_CLIENT_ID`/SECRET, `FACEBOOK_APP_ID`/SECRET, `TIKTOK_CLIENT_KEY`/SECRET | — |
-| **ZATCA Phase-2** | `ZATCA_ENV=sandbox\|simulation\|production` + onboard a device via `POST /api/admin/zatca/onboard` | `services/bim/`-adjacent flow |
+| **ZATCA Phase-2** | `ZATCA_ENV`, `ZATCA_SELLER_NAME`, `ZATCA_SELLER_VAT`, `CRON_DISPATCH_SECRET`, `FIELD_ENC_KEY` | §7.1 below |
+
+### 7.1 ZATCA Phase-2 (Fatoora) — the complete env matrix
+
+The Phase-2 pipeline (`lib/zatca/signing.ts` + `lib/zatca/fatoora.ts` + `lib/zatca/csid.ts` + `lib/zatca/persist.ts`) reads the following env vars. Any key the code uses but you leave unset degrades gracefully — never fatally — in the direction documented below.
+
+| Env var | Required when | Default | Used by |
+|---|---|---|---|
+| `ZATCA_ENV` | always (prod + staging) | `sandbox` | `lib/zatca/fatoora.ts fatooraBase()` — picks `developer-portal` / `simulation` / `core` on `gw-fatoora.zatca.gov.sa`. |
+| `ZATCA_SELLER_NAME` | fallback when no vendor name is on the Order | `ConstructsHub` | Phase-1 QR + Phase-2 invoice body. |
+| `ZATCA_SELLER_VAT` | fallback when the vendor has no `licenseNumber` on their profile | `300000000000003` | Phase-1 QR + Phase-2 invoice body. |
+| `FIELD_ENC_KEY` | **required** for Phase-2 (device private keys are AES-GCM encrypted at rest via `lib/crypto-field.ts`) | — | `lib/zatca/csid.ts encryptPrivateKey`. Without it, Phase-2 is unavailable and the invoice route silently falls back to Phase-1. |
+| `CRON_DISPATCH_SECRET` | required to arm the hourly `POST /api/cron/dispatch-zatca` CronJob | — | `src/app/api/cron/dispatch-zatca/route.ts verifySecret()`. Compared constant-time against the `x-cron-secret` request header. |
+
+Device credentials — compliance CSID + production CSID — are NOT env vars. They are issued by the Fatoora portal and stored in the `FatooraDeviceCredential` table after you walk the onboarding flow:
+
+1. `POST /api/admin/zatca/onboard` with `{ stage: 'CSR', deviceName, commonName, organisationName, vatNumber, businessCategory, solutionName, env }` → generates the EC secp256k1 key + CSR, persists the private key encrypted.
+2. `POST /api/admin/zatca/onboard` with `{ stage: 'COMPLIANCE', deviceId, otp }` where `otp` is the one-time password you grab from the Fatoora developer portal → returns the `complianceCertB64` + `complianceSecret` and advances the device to `COMPLIANCE`.
+3. (Later, after your compliance submissions clear) `POST /api/admin/zatca/onboard` with `{ stage: 'PRODUCTION', deviceId, requestId }` → swaps the compliance CSID for a production CSID.
+
+The signed-invoice path (`src/app/api/orders/[orderId]/invoice/route.ts`) picks the `PRODUCTION` device if available, falls back to the `COMPLIANCE` device on `sandbox`/`simulation`, and finally falls back to Phase-1 if no device credential exists. The response header `X-ZATCA-Phase` reports which path ran.
+
+### 7.2 Dry-run script `scripts/zatca-dryrun.ts`
+
+Exercises the full Phase-2 pipeline (sign → submit → persist → QR decode) end-to-end against either a mocked Fatoora or the real sandbox:
+
+```bash
+# Mock mode (default) — safe, no network traffic. Generates a one-off key +
+# self-signed cert, builds + signs one standard-01 + one simplified-02
+# invoice, intercepts the Fatoora POST, writes decoded QRs + submission
+# outcomes to scripts/.dryrun-output/{standard-01,simplified-02}.json
+cd waquor
+ZATCA_DRYRUN_MODE=mock npx tsx scripts/zatca-dryrun.ts
+
+# Sandbox mode — requires real Fatoora developer-portal credentials.
+# ZATCA_CSID_TOKEN_B64        — binarySecurityToken from the compliance CSID
+# ZATCA_CSID_SECRET           — password half of the Basic auth
+# ZATCA_CSID_CERT_PEM         — PEM form of the compliance certificate
+# ZATCA_DEVICE_PRIVATE_KEY_PEM — EC secp256k1 PKCS#8 PEM (device key)
+# ZATCA_DEVICE_PUBLIC_KEY_PEM  — EC secp256k1 SPKI PEM (device key)
+ZATCA_DRYRUN_MODE=sandbox ZATCA_ENV=sandbox \
+  ZATCA_CSID_TOKEN_B64=… ZATCA_CSID_SECRET=… ZATCA_CSID_CERT_PEM="$(cat cert.pem)" \
+  ZATCA_DEVICE_PRIVATE_KEY_PEM="$(cat key.pem)" \
+  ZATCA_DEVICE_PUBLIC_KEY_PEM="$(cat pub.pem)" \
+  npx tsx scripts/zatca-dryrun.ts
+```
+
+The script never writes to the DB. In sandbox mode it does make real HTTPS requests to `gw-fatoora.zatca.gov.sa` with the credentials from env, so run it with care.
 
 ---
 
