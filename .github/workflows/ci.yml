@@ -181,7 +181,150 @@ jobs:
             sh -c "pip install --no-cache-dir --user pytest httpx && python -m pytest -q tests"
 
   # ---------------------------------------------------------------------------
-  # 4. Docker — build the production web image. Depends on web passing so we
+  # 4. Security — SBOM + dependency scanning (launch-blocker §5.1-4-2).
+  #
+  # Goal: prove, every push, that we know every library we ship and that none
+  # of them carries a known CRITICAL CVE at build time. No new runtime deps —
+  # this job uses npm's built-in `sbom` + `audit`, PyPI's `pip-audit` for the
+  # BIM service, and Trivy for a filesystem CVE sweep. SBOMs are uploaded as
+  # artefacts so a pen tester can diff them release-to-release.
+  #
+  # Audit thresholds:
+  #   * CRITICAL → fail. These are drop-everything issues.
+  #   * HIGH     → warn + collect in the artefact. We don't gate on HIGH yet
+  #                because the current npm tree already carries several known-
+  #                high advisories (xlsx, uuid) that upstream has not patched;
+  #                blocking the pipeline on them would make the signal useless.
+  #                The artefact gives the pen-test vendor the exact list to
+  #                sweep, and the next launch-blocker iteration can tighten
+  #                to HIGH once the baseline is fixed.
+  #   * services/bim: fail on any vuln (small surface, pin matters).
+  # ---------------------------------------------------------------------------
+  security:
+    name: security (SBOM + dep scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: waquor/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # --- waquor ----------------------------------------------------------
+      - name: waquor — install (ci, no scripts for safety)
+        working-directory: waquor
+        run: npm ci --no-audit --no-fund --ignore-scripts
+
+      - name: waquor — generate CycloneDX SBOM (runtime only)
+        working-directory: waquor
+        run: |
+          npm sbom --sbom-format=cyclonedx --omit=dev --package-lock-only \
+            > ../sbom-waquor.cdx.json
+          echo "waquor SBOM: $(wc -c < ../sbom-waquor.cdx.json) bytes"
+
+      - name: waquor — npm audit (fail on CRITICAL, warn on HIGH)
+        working-directory: waquor
+        run: |
+          # Structured output for the artefact — captured regardless of exit.
+          npm audit --omit=dev --json > ../npm-audit-waquor.json || true
+          # HARD gate: fail on CRITICAL.
+          npm audit --omit=dev --audit-level=critical || CRITICAL_FOUND=1
+          # SOFT warning: HIGH is annotated in the log so reviewers see it
+          # inline, but does not fail the pipeline (see job comment above).
+          if ! npm audit --omit=dev --audit-level=high >/dev/null 2>&1; then
+            echo "::warning::waquor has HIGH-severity vulnerabilities (non-blocking). See artefact npm-audit-waquor.json."
+          fi
+          if [ "${CRITICAL_FOUND:-0}" = "1" ]; then
+            echo "::error::waquor has CRITICAL vulnerabilities."
+            exit 1
+          fi
+
+      # --- mobile ----------------------------------------------------------
+      - name: mobile — install (ci, no scripts)
+        working-directory: mobile
+        run: npm ci --no-audit --no-fund --ignore-scripts
+
+      - name: mobile — generate CycloneDX SBOM (runtime only)
+        working-directory: mobile
+        run: |
+          npm sbom --sbom-format=cyclonedx --omit=dev --package-lock-only \
+            > ../sbom-mobile.cdx.json
+
+      - name: mobile — npm audit (fail on CRITICAL, warn on HIGH)
+        working-directory: mobile
+        run: |
+          npm audit --omit=dev --json > ../npm-audit-mobile.json || true
+          npm audit --omit=dev --audit-level=critical || CRITICAL_FOUND=1
+          if ! npm audit --omit=dev --audit-level=high >/dev/null 2>&1; then
+            echo "::warning::mobile has HIGH-severity vulnerabilities (non-blocking). See artefact npm-audit-mobile.json."
+          fi
+          if [ "${CRITICAL_FOUND:-0}" = "1" ]; then
+            echo "::error::mobile has CRITICAL vulnerabilities."
+            exit 1
+          fi
+
+      # --- services/bim (Python) -------------------------------------------
+      # pip-audit uses the OSV database. We install it transiently into CI
+      # only; it is NEVER added to requirements.txt.
+      - name: bim — install pip-audit (CI-only, not a runtime dep)
+        run: pip install --no-cache-dir pip-audit==2.7.3
+
+      - name: bim — pip-audit against requirements.txt
+        run: |
+          pip-audit --requirement services/bim/requirements.txt \
+            --format cyclonedx-json --output sbom-bim.cdx.json --strict \
+            || AUDIT_FAILED=1
+          # Second pass renders a readable table into the log.
+          pip-audit --requirement services/bim/requirements.txt --strict || true
+          if [ "${AUDIT_FAILED:-0}" = "1" ]; then
+            echo "::error::services/bim has vulnerabilities. See artefact sbom-bim.cdx.json."
+            exit 1
+          fi
+
+      # --- Container image scan (deferred filesystem scan, no deps) --------
+      # Trivy's `fs` scanner reads the lockfiles directly, so we can scan the
+      # tree without building the image here (that is job `docker`'s job).
+      # Severity CRITICAL only — matches the audit thresholds above and keeps
+      # the pipeline usable while the HIGH baseline (xlsx, uuid, …) is being
+      # paid down. Pinned action version so a Trivy release doesn't flip the
+      # pipeline overnight.
+      - name: Trivy filesystem scan (CRITICAL only)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+          skip-dirs: "node_modules,.next,waquor/node_modules,waquor/.next,mobile/node_modules,services/bim/__pycache__"
+
+      # --- Artefacts: SBOMs + audit outputs for pen-test review ------------
+      - name: Upload SBOMs + audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-and-audit-${{ github.sha }}
+          path: |
+            sbom-waquor.cdx.json
+            sbom-mobile.cdx.json
+            sbom-bim.cdx.json
+            npm-audit-waquor.json
+            npm-audit-mobile.json
+          retention-days: 30
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # 5. Docker — build the production web image. Depends on web passing so we
   #    don't push a broken image.
   # ---------------------------------------------------------------------------
   docker:
