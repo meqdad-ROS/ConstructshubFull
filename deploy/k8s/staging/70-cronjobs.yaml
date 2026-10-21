@@ -208,3 +208,184 @@ spec:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: { drop: ["ALL"] }
+---
+# -----------------------------------------------------------------------------
+# (4) PDPL 90-day WorkerLocationPing aggregation (NFR-CMP-07, launch-blocker §5.1-3).
+#
+# Fires daily at 02:17 UTC — off-peak for the Riyadh fleet (05:17 KSA) and
+# off-sync from the 15-min and hourly jobs. One tick drains up to 10k pings
+# into daily rollups and deletes the raw rows. A full day's worth of pings
+# at 1 req/s per driver × 1k drivers × 86400s ≈ 86M rows per day; the batch
+# will cost ~9k ticks per day's drain, so we also run 02:17 + 02:22 + 02:27
+# (three ticks per day) so the first-run backlog clears in a week.
+# -----------------------------------------------------------------------------
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-aggregate-location
+  namespace: constructhub-staging
+  labels:
+    app: cron
+    job: aggregate-location
+spec:
+  schedule: "17,22,27 2 * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: curl
+              image: curlimages/curl:8.11.1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: cron-secrets
+                      key: CRON_DISPATCH_SECRET
+              command: ["sh", "-c"]
+              args:
+                - |
+                  curl -fsS --max-time 850 \
+                    -X POST \
+                    -H "x-cron-secret: $CRON_SECRET" \
+                    http://waquor.constructhub-staging.svc.cluster.local/api/cron/aggregate-location
+              resources:
+                requests: { cpu: "20m", memory: "64Mi" }
+                limits:   { cpu: "200m", memory: "128Mi" }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+---
+# -----------------------------------------------------------------------------
+# (5) PDPL 30-day RouteMetric aggregation (NFR-CMP-07, launch-blocker §5.1-3).
+#
+# Fires daily at 02:37 UTC. RouteMetric is the highest-volume table (one row
+# per API hit) — ~N requests/s * 86400 * 30 can be hundreds of millions. Three
+# consecutive ticks per day drain the backlog gradually without starving the
+# serving pod.
+# -----------------------------------------------------------------------------
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-aggregate-routes
+  namespace: constructhub-staging
+  labels:
+    app: cron
+    job: aggregate-routes
+spec:
+  schedule: "37,42,47 2 * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: curl
+              image: curlimages/curl:8.11.1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: cron-secrets
+                      key: CRON_DISPATCH_SECRET
+              command: ["sh", "-c"]
+              args:
+                - |
+                  curl -fsS --max-time 850 \
+                    -X POST \
+                    -H "x-cron-secret: $CRON_SECRET" \
+                    http://waquor.constructhub-staging.svc.cluster.local/api/cron/aggregate-routes
+              resources:
+                requests: { cpu: "20m", memory: "64Mi" }
+                limits:   { cpu: "200m", memory: "128Mi" }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+---
+# -----------------------------------------------------------------------------
+# (6) PDPL 90-day AnalyticsEvent aggregation (NFR-CMP-07, launch-blocker §5.1-3).
+#
+# Fires daily at 02:57 UTC. One tick per day is enough: analytics event volume
+# is bounded by in-app events (not every API call), so even a busy day's
+# worth of events fits in a few batches.
+# -----------------------------------------------------------------------------
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-aggregate-events
+  namespace: constructhub-staging
+  labels:
+    app: cron
+    job: aggregate-events
+spec:
+  schedule: "57 2 * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: curl
+              image: curlimages/curl:8.11.1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: cron-secrets
+                      key: CRON_DISPATCH_SECRET
+              command: ["sh", "-c"]
+              args:
+                - |
+                  curl -fsS --max-time 850 \
+                    -X POST \
+                    -H "x-cron-secret: $CRON_SECRET" \
+                    http://waquor.constructhub-staging.svc.cluster.local/api/cron/aggregate-events
+              resources:
+                requests: { cpu: "20m", memory: "64Mi" }
+                limits:   { cpu: "200m", memory: "128Mi" }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
