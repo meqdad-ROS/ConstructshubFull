@@ -6,9 +6,11 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
+  StyleProp,
   Text,
   TextInput,
   TextInputProps,
+  TextStyle,
   View,
   ViewStyle,
 } from 'react-native';
@@ -22,22 +24,22 @@ export function Screen({ children, padded = true }: { children: ReactNode; padde
   );
 }
 
-export function Title({ children }: { children: ReactNode }) {
-  return <Text style={typography.title}>{children}</Text>;
+export function Title({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
+  return <Text style={[typography.title, style]}>{children}</Text>;
 }
 
-export function Subtitle({ children }: { children: ReactNode }) {
-  return <Text style={[typography.subtitle, { marginTop: spacing.xs }]}>{children}</Text>;
+export function Subtitle({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
+  return <Text style={[typography.subtitle, { marginTop: spacing.xs }, style]}>{children}</Text>;
 }
 
-export function Body({ children, muted = false }: { children: ReactNode; muted?: boolean }) {
+export function Body({ children, muted = false, style }: { children: ReactNode; muted?: boolean; style?: StyleProp<TextStyle> }) {
   return (
-    <Text style={[typography.body, muted ? { color: colors.muted } : null]}>{children}</Text>
+    <Text style={[typography.body, muted ? { color: colors.muted } : null, style]}>{children}</Text>
   );
 }
 
-export function Caption({ children }: { children: ReactNode }) {
-  return <Text style={typography.caption}>{children}</Text>;
+export function Caption({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
+  return <Text style={[typography.caption, style]}>{children}</Text>;
 }
 
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
@@ -54,6 +56,7 @@ export function Button({
   loading = false,
   icon,
   fullWidth = false,
+  style,
 }: {
   label: string;
   onPress: () => void;
@@ -62,6 +65,7 @@ export function Button({
   loading?: boolean;
   icon?: ReactNode;
   fullWidth?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   const palette = palettes[variant];
   const inactive = disabled || loading;
@@ -75,6 +79,7 @@ export function Button({
         fullWidth && { alignSelf: 'stretch' },
         pressed && !inactive && { opacity: 0.85 },
         inactive && { opacity: 0.5 },
+        style,
       ]}
       accessibilityRole="button"
       accessibilityState={{ disabled: inactive }}
@@ -153,13 +158,15 @@ export function Row({
   children,
   gap = spacing.sm,
   align = 'center',
+  style,
 }: {
   children: ReactNode;
   gap?: number;
   align?: 'center' | 'flex-start' | 'flex-end' | 'space-between';
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: align, gap }}>
+    <View style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: align, gap }, style]}>
       {children}
     </View>
   );

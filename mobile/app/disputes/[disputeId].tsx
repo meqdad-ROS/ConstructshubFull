@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View, Image, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Body, Button, Caption, Row, Screen, Title, StatusPill } from '../../components/ui';
+import { Body, Button, Caption, Row, Screen, Subtitle, Title, StatusPill } from '../../components/ui';
 import { useToast } from '../../components/toast';
 import { api, ApiError } from '../../lib/api';
 import { enqueue } from '../../lib/outbox';

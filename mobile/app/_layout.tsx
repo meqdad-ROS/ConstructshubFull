@@ -44,7 +44,7 @@ export default function RootLayout() {
   useEffect(() => {
     const sub = Linking.addEventListener('url', (ev) => {
       const parsed = Linking.parse(ev.url);
-      if (parsed.path) router.push(`/${parsed.path}`);
+      if (parsed.path) router.push(`/${parsed.path}` as never);
     });
     return () => sub.remove();
   }, [router]);
