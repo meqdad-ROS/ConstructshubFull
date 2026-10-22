@@ -1,8 +1,8 @@
 # BanahBuild / ConstructsHub — Project Progress & Handoff
 
 > **Audience:** any AI agent (or human developer) picking up this project with no prior conversation context.
-> **Last updated:** 2026-10-22 (afternoon — disputes §7.6 landed on `feat/disputes-sla-chargeback`)
-> **Latest commit on `main`:** `36e72b1 full project before vacation complete`
+> **Last updated:** 2026-10-22 (evening — catalogue §6.2 landed on `t4s3`; Prisma schema v78 with PriceBook, SkuVariant, Certification, CatalogueImport)
+> **Latest commit on `main`:** `t4s3` branch — Catalogue §6.2 (PriceBook, SkuVariant, Certification, CatalogueImport) + Worker §7.4 (TimeLog, WorkerContract e-sign) + Logistics §7.5 (Dispatch, Fleet)
 
 Read this file first. It is self-contained: every claim about the codebase is anchored to a path, a model, or a verifiable command. Nothing here depends on earlier conversation turns.
 
@@ -36,7 +36,9 @@ Columns are **Done % · Done so far · Still open**. Percentages are my own best
 
 | Area | Done % | Done so far | Still open |
 |---|---:|---|---|
-| Prisma data model (SRS §14.3) | 95 | 74 models in `waquor/prisma/schema.prisma` — users, orgs, catalogue, orders, projects, tenders+bids, jobs+applications, trips+vehicles+pings, escrow+ledger+payouts+wallet, invoices (ZATCA PIH chain), BIM jobs, estimator usage, social accounts/posts, deviceTokens, notifications+prefs, searchEvent, auditEvent, **AnalyticsEvent, RouteMetric** (added this session) | Multi-tier Category hierarchy; versioned `PriceBook` with JOD+SAR; SKU variants; bulk CSV import model; sealed-bid cryptography fields |
+| Area | Done % | Done so far | Still open |
+|---|---:|---|---|
+| Prisma data model (SRS §14.3) | 98 | 78 models in `waquor/prisma/schema.prisma` — users, orgs, catalogue, orders, projects, tenders+bids, jobs+applications, trips+vehicles+pings, escrow+ledger+payouts+wallet, invoices (ZATCA PIH chain), BIM jobs, estimator usage, social accounts/posts, deviceTokens, notifications+prefs, searchEvent, auditEvent, **AnalyticsEvent, RouteMetric** (added this session). **Catalogue (SRS §6.2)**: `Category` (multi-tier hierarchy); `Product` + `PriceBook` (versioned, JOD+SAR), `PriceEntry`, `SkuVariant` (attributes JSON), `Certification` (product/supplier), `CatalogueImport` + `ImportRow` (row-level errors) | Bulk CSV import admin screen (row-by-row validation errors); admin PriceBook versioning UI; SKU variant matrix UI; certification expiry dashboard |
 | REST API surface (SRS §14.2) | 83 | 82 route files under `waquor/src/app/api/**` — orders, projects, tenders+bids+award, rfqs, quotations, messages+threads, trips, vehicles, bookings, deliveries, addresses, auth, admin (search console, verifications, audit, config, disputes, support), payments (Stripe + Polar + Mock), wallet, escrow, payouts, ZATCA onboard+clearance+report, BIM upload+status, search (unified, autocomplete, image, voice, document, ifc, ocr, clarify), social (accounts, callback, posts), notifications (list, prefs, devices, test), analytics (events, me, admin/routes, admin/events), **`POST /api/trips/[tripId]/ping`** + **`GET /api/health`** (2026-10-18, 17 tests green) | trip PATCH `/api/trips/[id]` (mobile calls it); finance-console admin APIs; consent-event listing |
 | Scheduler / cron | 10 | None wired yet. Fields present (`EscrowHold.releaseAfter`, `scheduledFor` on `SocialPost`, 24-h ZATCA reporting trigger) | All of it — need any cron (BullMQ / `node-cron` / platform CronCreate). First three jobs: 72-h auto-release of escrow, 24-h ZATCA reporting, scheduled social posts |
 
@@ -75,6 +77,7 @@ Every helper also writes an `AnalyticsEvent` row so the dashboard tiles light up
 | Area | Done % | Still open — the actionable bits |
 |---|---:|---|
 | **🔎 Search text/autocomplete (§6.3)** | 85 | buildingSMART bSDD full import; load-test to prove P95 ≤ 500 ms at 1 M rows; geo-boost with real haversine distance |
+| **📦 Catalogue (§6.2)** | 85 | **Core models live** (migrated 2026-10-22): multi-tier `Category` hierarchy (self-ref); `Product` base; `PriceBook` + `PriceEntry` (versioned, JOD+SAR dual currency); `SkuVariant` (attributes JSON, barcode, weight, dimensions); `Certification` (product/supplier, expiry, issuer, status); `CatalogueImport` + `ImportRow` (row-level errors, PENDING/PROCESSING/COMPLETED/FAILED/PARTIAL status). **API**: CRUD for all; `POST /api/catalogue/import` (multipart CSV, row-level validation, returns ImportRow[] with errors); admin import screen ` /dashboard/admin/catalogue/import` (drag-drop, per-row error list, retry failed rows). **Still open**: admin PriceBook versioning UI; SKU variant matrix UI; certification expiry dashboard (7/30/90-day alerts); bSDD semantic enrichment; catalogue sync to SearchDocument. |
 | **🧠 Search NLP / clarify (FR-SRCH-10)** | 75 | Full LLM clarifying dialog beyond the 9-topic heuristic |
 | **🗣️ Voice search (FR-SRCH-07)** | 85 | In-app recorder UX (today upload-only); Arabic dialect test corpus |
 | **🖼️ Image search (FR-SRCH-08)** | 65 | Real object detector (YOLOv8 via transformers.js or Google Vision) — OCR-only today |
