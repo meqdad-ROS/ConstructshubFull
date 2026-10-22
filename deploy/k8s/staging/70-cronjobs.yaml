@@ -389,3 +389,62 @@ spec:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: { drop: ["ALL"] }
+---
+# -----------------------------------------------------------------------------
+# (7) Dispute SLA reminders (SRS §7.6-2).
+#
+# Fires every 15 minutes to drive first-response + resolution-deadline
+# reminders on open disputes. The handler is idempotent per stage via the
+# unique index on DisputeReminder(disputeId, stage).
+# -----------------------------------------------------------------------------
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cron-dispute-sla
+  namespace: constructhub-staging
+  labels:
+    app: cron
+    job: dispute-sla
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: curl
+              image: curlimages/curl:8.11.1
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: cron-secrets
+                      key: CRON_DISPATCH_SECRET
+              command: ["sh", "-c"]
+              args:
+                - |
+                  curl -fsS --max-time 550 \
+                    -X POST \
+                    -H "x-cron-secret: $CRON_SECRET" \
+                    http://waquor.constructhub-staging.svc.cluster.local/api/cron/dispute-sla
+              resources:
+                requests: { cpu: "20m", memory: "64Mi" }
+                limits:   { cpu: "200m", memory: "128Mi" }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }

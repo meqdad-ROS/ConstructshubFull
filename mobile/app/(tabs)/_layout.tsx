@@ -15,9 +15,9 @@ function tabsForRole(role: string | undefined): Set<string> {
       return new Set(['marketplace', 'orders', 'messages', 'profile', 'settings']);
     case 'USR_CONTR':
     case 'USR_CONSULT':
-      return new Set(['marketplace', 'tenders', 'orders', 'messages', 'profile', 'settings']);
+      return new Set(['marketplace', 'tenders', 'orders', 'messages', 'disputes', 'profile', 'settings']);
     case 'USR_OWNER':
-      return new Set(['marketplace', 'tenders', 'orders', 'messages', 'profile', 'settings']);
+      return new Set(['marketplace', 'tenders', 'orders', 'messages', 'disputes', 'profile', 'settings']);
     case 'USR_CASUAL':
     default:
       return new Set(['marketplace', 'orders', 'messages', 'profile', 'settings']);
@@ -62,6 +62,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="orders"
         options={{ title: t('nav.orders'), tabBarIcon: () => <Text>📦</Text>, ...hidden('orders') }}
+      />
+      <Tabs.Screen
+        name="disputes"
+        options={{ title: t('nav.disputes'), tabBarIcon: () => <Text>⚖️</Text>, ...hidden('disputes') }}
       />
       <Tabs.Screen
         name="messages"
