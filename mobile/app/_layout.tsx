@@ -11,6 +11,7 @@ import { SessionCtx, useProvideSession } from '../lib/session';
 import { initLocale } from '../lib/i18n';
 import { requireBiometric } from '../lib/biometric';
 import { startOutboxDrainer } from '../lib/outbox';
+import { setupNotificationListener } from '../lib/push';
 import { colors } from '../lib/theme';
 
 const RELOCK_MS = 5 * 60_000;
@@ -40,14 +41,13 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Deep links. `constructhub://orders/abc` → push /orders/abc etc.
+  // Setup push notification listener (handles deep linking from push taps)
   useEffect(() => {
-    const sub = Linking.addEventListener('url', (ev) => {
-      const parsed = Linking.parse(ev.url);
-      if (parsed.path) router.push(`/${parsed.path}` as never);
-    });
-    return () => sub.remove();
-  }, [router]);
+    const cleanup = setupNotificationListener();
+    return cleanup;
+  }, []);
+
+  // Deep links. `constructhub://orders/abc` → push /orders/abc etc.
 
   // Re-lock when the app has been in background for > RELOCK_MS.
   useEffect(() => {
