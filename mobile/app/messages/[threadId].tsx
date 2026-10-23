@@ -136,7 +136,7 @@ export default function ChatScreen() {
     setUploadingAttachment(true);
     try {
       // Step 1: Get upload token
-      const tokenResp = await api<AttachmentToken>(`/api/messages/threads/${threadId}/attachments`, {
+      const tokenResp = await api<AttachmentToken>(`/api/messages/${threadId}/attachments`, {
         method: 'POST',
         body: JSON.stringify({
           ttlSeconds: 600,

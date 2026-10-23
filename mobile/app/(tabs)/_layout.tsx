@@ -12,12 +12,12 @@ function tabsForRole(role: string | undefined): Set<string> {
     case 'USR_WORKER':
       return new Set(['jobs', 'shift', 'messages', 'profile', 'settings']);
     case 'USR_SUPPLIER':
-      return new Set(['marketplace', 'orders', 'messages', 'profile', 'settings']);
+      return new Set(['marketplace', 'supplier/index', 'orders', 'messages', 'profile', 'settings']);
     case 'USR_CONTR':
     case 'USR_CONSULT':
       return new Set(['marketplace', 'tenders', 'orders', 'messages', 'disputes', 'profile', 'settings']);
     case 'USR_OWNER':
-      return new Set(['marketplace', 'tenders', 'orders', 'organisations', 'messages', 'disputes', 'profile', 'settings']);
+      return new Set(['marketplace', 'owner/index', 'tenders', 'orders', 'organisations', 'messages', 'disputes', 'profile', 'settings']);
     case 'USR_CASUAL':
     default:
       return new Set(['marketplace', 'orders', 'messages', 'profile', 'settings']);
@@ -46,6 +46,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="marketplace"
         options={{ title: t('nav.marketplace'), tabBarIcon: () => <Text>🛒</Text>, ...hidden('marketplace') }}
+      />
+      <Tabs.Screen
+        name="owner/index"
+        options={{ title: t('nav.owner'), tabBarIcon: () => <Text>🏗️</Text>, ...hidden('owner/index') }}
+      />
+      <Tabs.Screen
+        name="supplier/index"
+        options={{ title: t('nav.supplier'), tabBarIcon: () => <Text>🏭</Text>, ...hidden('supplier/index') }}
       />
       <Tabs.Screen
         name="jobs"

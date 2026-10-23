@@ -6,12 +6,40 @@ import * as Sentry from '@sentry/react-native';
 
 let initialized = false;
 
+export function scrubSentryEvent<
+  T extends {
+    request?: { headers?: Record<string, string> };
+    user?: Record<string, unknown>;
+  }
+>(event: T): T {
+  if (event.request?.headers) {
+    const headers = { ...event.request.headers };
+    delete headers['authorization'];
+    delete headers['cookie'];
+    delete headers['x-request-id'];
+    event.request = { ...event.request, headers };
+  }
+  if (event.user) {
+    const { email, ip_address, phone, iban, token, ...rest } = event.user;
+    void email;
+    void ip_address;
+    void phone;
+    void iban;
+    void token;
+    event.user = rest;
+  }
+  return event;
+}
+
+export function isSentryInitialized(): boolean {
+  return initialized;
+}
+
 export function initSentry(): void {
   if (initialized) return;
-  
+
   const dsn = process.env.SENTRY_DSN ?? process.env.EXPO_PUBLIC_SENTRY_DSN;
   if (!dsn) {
-    // No DSN — export no-ops below
     return;
   }
 
@@ -20,33 +48,14 @@ export function initSentry(): void {
       dsn,
       enableAutoSessionTracking: true,
       sessionTrackingIntervalMillis: 30_000,
-      // Environment is set via NODE_ENV or SENTRY_ENVIRONMENT
       environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV ?? 'development',
-      // Release tracking — uses expo-updates runtime version
       release: process.env.EXPO_PUBLIC_APP_VERSION ?? '0.1.0',
-      // Don't send PII by default
       sendDefaultPii: false,
-      // Attach stacktraces for better debugging
       attachStacktrace: true,
-      // Sample rate for performance monitoring
       tracesSampleRate: 0.1,
-      // BeforeSend hook to scrub sensitive data
       beforeSend(event) {
-        // Remove sensitive fields from error context
-        if (event.request) {
-          const headers = event.request.headers ?? {};
-          delete headers['authorization'];
-          delete headers['cookie'];
-          delete headers['x-request-id'];
-        }
-        // Remove user PII if present
-        if (event.user) {
-          const { email, ip_address, ...rest } = event.user as Record<string, unknown>;
-          event.user = rest;
-        }
-        return event;
+        return scrubSentryEvent(event);
       },
-      // Integrations
       integrations: [
         Sentry.expoRouterIntegration(),
         Sentry.reactNativeTracingIntegration(),
@@ -59,24 +68,52 @@ export function initSentry(): void {
   }
 }
 
-// No-op functions for when Sentry is not configured
-function noop() {}
+export function captureException(
+  ...args: Parameters<typeof Sentry.captureException>
+): string | undefined {
+  if (!initialized) return undefined;
+  return Sentry.captureException(...args);
+}
 
-export const captureException = initialized ? Sentry.captureException : noop;
-export const captureMessage = initialized ? Sentry.captureMessage : noop;
-export const addBreadcrumb = initialized ? Sentry.addBreadcrumb : noop;
-export const setUser = initialized ? Sentry.setUser : noop;
-export const setTag = initialized ? Sentry.setTag : noop;
-export const setContext = initialized ? Sentry.setContext : noop;
-export const setExtra = initialized ? Sentry.setExtra : noop;
+export function captureMessage(
+  ...args: Parameters<typeof Sentry.captureMessage>
+): string | undefined {
+  if (!initialized) return undefined;
+  return Sentry.captureMessage(...args);
+}
+
+export function addBreadcrumb(
+  ...args: Parameters<typeof Sentry.addBreadcrumb>
+): void {
+  if (!initialized) return;
+  Sentry.addBreadcrumb(...args);
+}
+
+export function setUser(...args: Parameters<typeof Sentry.setUser>): void {
+  if (!initialized) return;
+  Sentry.setUser(...args);
+}
+
+export function setTag(...args: Parameters<typeof Sentry.setTag>): void {
+  if (!initialized) return;
+  Sentry.setTag(...args);
+}
+
+export function setContext(...args: Parameters<typeof Sentry.setContext>): void {
+  if (!initialized) return;
+  Sentry.setContext(...args);
+}
+
+export function setExtra(...args: Parameters<typeof Sentry.setExtra>): void {
+  if (!initialized) return;
+  Sentry.setExtra(...args);
+}
 
 // Wrapper for async functions to capture errors
 export function withSentry<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   context?: string
 ): T {
-  if (!initialized) return fn;
-  
   return (async (...args: unknown[]) => {
     try {
       return await fn(...args);

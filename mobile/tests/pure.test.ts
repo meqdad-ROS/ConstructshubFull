@@ -4,6 +4,8 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import en from '../i18n/en.json';
+import ar from '../i18n/ar.json';
 import {
   computeTotals,
   lineTotal,
@@ -54,4 +56,27 @@ test('relativeTime formats seconds/minutes/hours/days/absolute', () => {
   assert.equal(relativeTime(now - 3 * 3600_000, now), '3h');
   assert.equal(relativeTime(now - 2 * 86_400_000, now), '2d');
   assert.equal(relativeTime(Date.parse('2024-01-01T00:00:00Z'), now), '2024-01-01');
+});
+
+test('i18n en.json and ar.json have identical key sets including owner, supplier, and attachment keys', () => {
+  const enMap = en as Record<string, string>;
+  const arMap = ar as Record<string, string>;
+
+  const enKeys = Object.keys(enMap).sort();
+  const arKeys = Object.keys(arMap).sort();
+  assert.deepEqual(enKeys, arKeys);
+
+  for (const required of [
+    'nav.owner',
+    'nav.supplier',
+    'messages.attach_image',
+    'messages.attach_file',
+    'owner.active_projects',
+    'owner.open_tenders',
+    'supplier.recent_orders',
+    'supplier.inventory',
+  ]) {
+    assert.ok(enMap[required] && enMap[required].length > 0, `missing en[${required}]`);
+    assert.ok(arMap[required] && arMap[required].length > 0, `missing ar[${required}]`);
+  }
 });

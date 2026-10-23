@@ -66,7 +66,7 @@ export default function SupplierDashboard() {
 
   const renderProduct = useCallback(
     ({ item }: { item: SupplierProductRow }) => (
-      <Pressable onPress={() => router.push(`/products/${item.id}` as any)}>
+      <Pressable onPress={() => router.push(`/product/${item.id}`)}>
         <Card style={{ marginBottom: spacing.sm }}>
           <Row align="space-between">
             <View style={{ flex: 1, gap: 4 }}>

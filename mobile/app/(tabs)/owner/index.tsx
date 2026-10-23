@@ -42,7 +42,7 @@ export default function OwnerDashboard() {
 
   const renderProject = useCallback(
     ({ item }: { item: OwnerProjectRow }) => (
-      <Pressable onPress={() => router.push(`/projects/${item.id}` as any)}>
+      <Pressable onPress={() => router.push('/(tabs)/tenders')}>
         <Card style={{ marginBottom: spacing.sm }}>
           <Row align="space-between">
             <View style={{ flex: 1, gap: 4 }}>
