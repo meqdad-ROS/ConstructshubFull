@@ -10,7 +10,7 @@ function tabsForRole(role: string | undefined): Set<string> {
     case 'USR_DRIVER':
       return new Set(['trips', 'messages', 'profile', 'settings']);
     case 'USR_WORKER':
-      return new Set(['jobs', 'messages', 'profile', 'settings']);
+      return new Set(['jobs', 'shift', 'messages', 'profile', 'settings']);
     case 'USR_SUPPLIER':
       return new Set(['marketplace', 'orders', 'messages', 'profile', 'settings']);
     case 'USR_CONTR':
@@ -50,6 +50,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="jobs"
         options={{ title: t('nav.jobs'), tabBarIcon: () => <Text>🧰</Text>, ...hidden('jobs') }}
+      />
+      <Tabs.Screen
+        name="shift"
+        options={{ title: t('nav.shift'), tabBarIcon: () => <Text>🕐</Text>, ...hidden('shift') }}
       />
       <Tabs.Screen
         name="trips"

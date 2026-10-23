@@ -21,7 +21,9 @@ export type OutboxKind =
   | 'bid.submit'
   | 'review.create'
   | 'trip.accept'
-  | 'location.ping';
+  | 'location.ping'
+  | 'timeLog.checkIn'
+  | 'timeLog.checkOut';
 
 export type OutboxItem = {
   id: string;
