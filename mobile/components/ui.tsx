@@ -14,7 +14,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { colors, radius, spacing, typography } from '../lib/theme';
+import { colors, radius, spacing, typography, isRTL, rtlTextAlign } from '../lib/theme';
 
 export function Screen({ children, padded = true }: { children: ReactNode; padded?: boolean }) {
   return (
@@ -34,7 +34,7 @@ export function Subtitle({ children, style }: { children: ReactNode; style?: Sty
 
 export function Body({ children, muted = false, style }: { children: ReactNode; muted?: boolean; style?: StyleProp<TextStyle> }) {
   return (
-    <Text style={[typography.body, muted ? { color: colors.muted } : null, style]}>{children}</Text>
+    <Text style={[typography.body, { textAlign: rtlTextAlign }, muted ? { color: colors.muted } : null, style]}>{children}</Text>
   );
 }
 
@@ -159,14 +159,16 @@ export function Row({
   gap = spacing.sm,
   align = 'center',
   style,
+  rtlAware = true,
 }: {
   children: ReactNode;
   gap?: number;
   align?: 'center' | 'flex-start' | 'flex-end' | 'space-between';
   style?: StyleProp<ViewStyle>;
+  rtlAware?: boolean;
 }) {
   return (
-    <View style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: align, gap }, style]}>
+    <View style={[{ flexDirection: rtlAware && isRTL ? 'row-reverse' : 'row', alignItems: 'center', justifyContent: align, gap }, style]}>
       {children}
     </View>
   );

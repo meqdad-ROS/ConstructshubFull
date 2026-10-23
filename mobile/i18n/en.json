@@ -49,6 +49,8 @@
   "messages.title": "Messages",
   "messages.empty": "No conversations yet.",
   "messages.compose": "Type a message…",
+  "messages.attach_image": "📷 Image",
+  "messages.attach_file": "📎 File",
   "settings.locale": "Language",
   "settings.biometric": "Unlock with biometrics",
   "settings.notifications": "Notifications",

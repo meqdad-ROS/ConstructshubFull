@@ -49,6 +49,8 @@
   "messages.title": "المحادثات",
   "messages.empty": "لا توجد محادثات بعد.",
   "messages.compose": "اكتب رسالة…",
+  "messages.attach_image": "📷 صورة",
+  "messages.attach_file": "📎 ملف",
   "settings.locale": "اللغة",
   "settings.biometric": "فتح بالبصمة أو الوجه",
   "settings.notifications": "الإشعارات",

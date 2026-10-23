@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Linking from 'expo-linking';
 import { Body, Button, Caption, Row, Screen, Title } from '../../components/ui';
 import { useToast } from '../../components/toast';
-import { api, ApiError } from '../../lib/api';
+import { api, ApiError, API_BASE_URL } from '../../lib/api';
 import { enqueue } from '../../lib/outbox';
 import { colors, radius, spacing } from '../../lib/theme';
 import { t } from '../../lib/i18n';
@@ -19,7 +22,23 @@ type ThreadView = {
     body: string;
     createdAt: string;
     isMine: boolean;
+    attachments?: Array<{
+      id: string;
+      contentType: string;
+      sizeBytes: number;
+      filename: string;
+      url: string | null;
+      urlExpiresAt: string | null;
+    }>;
   }>;
+};
+
+type AttachmentToken = {
+  token: string;
+  uploadUrl: string;
+  expiresAt: string;
+  maxSizeBytes: number;
+  allowedMime: string[];
 };
 
 export default function ChatScreen() {
@@ -27,6 +46,7 @@ export default function ChatScreen() {
   const toast = useToast();
   const qc = useQueryClient();
   const [draft, setDraft] = useState('');
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const listRef = useRef<FlatList>(null);
 
   const q = useQuery<ThreadView>({
@@ -60,6 +80,7 @@ export default function ChatScreen() {
                 body: text,
                 createdAt: new Date().toISOString(),
                 isMine: true,
+                attachments: [],
               },
             ],
           }
@@ -87,6 +108,70 @@ export default function ChatScreen() {
     }
   }, [draft, qc, q, threadId, toast]);
 
+  const pickImage = useCallback(async () => {
+    try {
+      const pick = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+      if (pick.canceled || !pick.assets[0]) return;
+      await uploadAttachment(pick.assets[0].uri, pick.assets[0].fileName ?? 'photo.jpg', pick.assets[0].mimeType ?? 'image/jpeg');
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : 'Image pick failed', { tone: 'danger' });
+    }
+  }, [threadId, toast]);
+
+  const pickDocument = useCallback(async () => {
+    try {
+      const pick = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf', 'video/*', 'audio/*', 'text/plain'] });
+      if (pick.canceled || !pick.assets[0]) return;
+      const asset = pick.assets[0];
+      await uploadAttachment(asset.uri, asset.name ?? 'file', asset.mimeType ?? 'application/octet-stream');
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : 'Document pick failed', { tone: 'danger' });
+    }
+  }, [threadId, toast]);
+
+  const uploadAttachment = async (uri: string, filename: string, mime: string) => {
+    setUploadingAttachment(true);
+    try {
+      // Step 1: Get upload token
+      const tokenResp = await api<AttachmentToken>(`/api/messages/threads/${threadId}/attachments`, {
+        method: 'POST',
+        body: JSON.stringify({
+          ttlSeconds: 600,
+          maxSizeBytes: 20 * 1024 * 1024,
+          allowedMime: ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf', 'video/mp4', 'video/quicktime', 'audio/mpeg', 'audio/mp4', 'text/plain'],
+        }),
+      });
+
+      // Step 2: Upload the file using the token
+      const form = new FormData();
+      form.append('file', { uri, name: filename, type: mime } as unknown as Blob);
+      
+      const res = await fetch(`${API_BASE_URL}${tokenResp.uploadUrl}`, {
+        method: 'PUT',
+        headers: {
+          'x-attachment-token': tokenResp.token,
+          'x-attachment-filename': filename,
+        },
+        body: form,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(err.error || 'Upload failed');
+      }
+
+      await q.refetch();
+      toast.show('Attachment sent', { tone: 'success' });
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : 'Upload failed', { tone: 'danger' });
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
   const counterpart = q.data?.thread?.members.find((m) => m.id !== 'me')?.name ?? 'Conversation';
 
   return (
@@ -105,21 +190,43 @@ export default function ChatScreen() {
           data={q.data?.messages ?? []}
           keyExtractor={(m) => m.id}
           renderItem={({ item }) => (
-            <Row align={item.isMine ? 'flex-end' : 'flex-start'}>
-              <View
-                style={[
-                  styles.bubble,
-                  item.isMine ? styles.bubbleMine : styles.bubbleOther,
-                ]}
-              >
-                <Body>{item.body}</Body>
-                <Caption>{fmtRelative(item.createdAt)}</Caption>
-              </View>
-            </Row>
+            <View style={{ width: '100%' }}>
+              <Row align={item.isMine ? 'flex-end' : 'flex-start'}>
+                <View
+                  style={[
+                    styles.bubble,
+                    item.isMine ? styles.bubbleMine : styles.bubbleOther,
+                  ]}
+                >
+                  {item.body && <Body>{item.body}</Body>}
+                  {item.attachments?.map((att: { id: string; contentType: string; sizeBytes: number; filename: string; url: string | null; urlExpiresAt: string | null }) => (
+                    <Pressable key={att.id} onPress={() => att.url && openUrl(att.url)}>
+                      <View style={styles.attachment}>
+                        <Body>{attachmentIcon(att.contentType)} {att.filename}</Body>
+                        <Caption>{formatBytes(att.sizeBytes)}</Caption>
+                      </View>
+                    </Pressable>
+                  ))}
+                  <Caption>{fmtRelative(item.createdAt)}</Caption>
+                </View>
+              </Row>
+            </View>
           )}
           ListEmptyComponent={<Caption>{q.isLoading ? t('common.loading') : t('messages.empty')}</Caption>}
         />
         <View style={styles.compose}>
+          <Button
+            label={t('messages.attach_image')}
+            variant="ghost"
+            onPress={pickImage}
+            disabled={uploadingAttachment}
+          />
+          <Button
+            label={t('messages.attach_file')}
+            variant="ghost"
+            onPress={pickDocument}
+            disabled={uploadingAttachment}
+          />
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -138,6 +245,24 @@ export default function ChatScreen() {
   );
 }
 
+async function openUrl(url: string) {
+  await Linking.openURL(url);
+}
+
+function attachmentIcon(mime: string): string {
+  if (mime.startsWith('image/')) return '🖼️';
+  if (mime.startsWith('video/')) return '🎥';
+  if (mime.startsWith('audio/')) return '🎵';
+  if (mime === 'application/pdf') return '📄';
+  return '📎';
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 const styles = StyleSheet.create({
   bubble: {
     maxWidth: '80%',
@@ -154,6 +279,7 @@ const styles = StyleSheet.create({
     borderTopColor: colors.divider,
     borderTopWidth: StyleSheet.hairlineWidth,
     alignItems: 'flex-end',
+    flexWrap: 'wrap',
   },
   input: {
     flex: 1,
@@ -166,5 +292,9 @@ const styles = StyleSheet.create({
     borderColor: colors.divider,
     maxHeight: 120,
     fontSize: 15,
+  },
+  attachment: {
+    gap: 2,
+    paddingVertical: 4,
   },
 });

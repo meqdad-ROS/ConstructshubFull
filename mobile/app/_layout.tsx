@@ -12,6 +12,7 @@ import { initLocale } from '../lib/i18n';
 import { requireBiometric } from '../lib/biometric';
 import { startOutboxDrainer } from '../lib/outbox';
 import { setupNotificationListener } from '../lib/push';
+import { initSentry } from '../lib/sentry';
 import { colors } from '../lib/theme';
 
 const RELOCK_MS = 5 * 60_000;
@@ -23,12 +24,13 @@ export default function RootLayout() {
   const lastBackground = useRef<number | null>(null);
   const router = useRouter();
 
-  // Bootstrap: locale, outbox drainer, biometric gate.
+  // Bootstrap: locale, outbox drainer, biometric gate, Sentry.
   useEffect(() => {
     let unsubOutbox: (() => void) | null = null;
     (async () => {
       await initLocale();
       unsubOutbox = startOutboxDrainer();
+      initSentry();
       if (await requireBiometric('Unlock ConstructsHub')) {
         setLocked(false);
       } else {

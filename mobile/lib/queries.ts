@@ -168,3 +168,65 @@ export function useNotificationList() {
     refetchInterval: 30_000,
   });
 }
+
+export function useSupplierDashboard() {
+  return useQuery<{
+    recentOrders: Array<{
+      id: string;
+      customer: string;
+      items: string;
+      total: number | null;
+      status: string;
+      createdAt: string;
+    }>;
+    products: Array<{
+      id: string;
+      name: string;
+      stock: number;
+      price: number | null;
+      lowStock: boolean;
+    }>;
+    stats: {
+      totalProducts: number;
+      lowStockProducts: number;
+      pendingOrders: number;
+    };
+  }>({
+    queryKey: ['supplier', 'dashboard'],
+    queryFn: () => api('/api/supplier/dashboard'),
+  });
+}
+
+export function useOwnerDashboard() {
+  return useQuery<{
+    projects: Array<{
+      id: string;
+      name: string;
+      location: string | null;
+      status: string;
+      budget: number | null;
+      milestonesCount: number;
+      tendersCount: number;
+      bidsCount: number;
+      createdAt: string;
+    }>;
+    tenders: Array<{
+      id: string;
+      title: string;
+      status: string;
+      bidsCount: number;
+      projectName: string;
+      createdAt: string;
+    }>;
+    stats: {
+      activeProjects: number;
+      openTenders: number;
+      newBids: number;
+      unreadNotifications: number;
+      totalBudget: number;
+    };
+  }>({
+    queryKey: ['owner', 'dashboard'],
+    queryFn: () => api('/api/owner/dashboard'),
+  });
+}

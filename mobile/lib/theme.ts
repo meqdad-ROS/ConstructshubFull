@@ -5,7 +5,7 @@
 // Everything in the mobile UI should read tokens from here. If you find a
 // hard-coded hex code in a screen, pull it up to this file.
 
-import { TextStyle } from 'react-native';
+import { I18nManager, TextStyle, ViewStyle } from 'react-native';
 
 export const colors = {
   // Primary brand
@@ -72,3 +72,45 @@ export const shadows = {
 } as const;
 
 export type Palette = keyof typeof colors;
+
+// RTL-aware helpers
+export const isRTL = I18nManager.isRTL;
+
+// Convert LTR margin/padding to RTL-aware (start/end)
+export function rtlSpacing(
+  start?: number,
+  end?: number,
+  top?: number,
+  bottom?: number
+): ViewStyle {
+  return isRTL
+    ? { marginEnd: start, marginStart: end, marginTop: top, marginBottom: bottom }
+    : { marginStart: start, marginEnd: end, marginTop: top, marginBottom: bottom };
+}
+
+export function rtlPadding(
+  start?: number,
+  end?: number,
+  top?: number,
+  bottom?: number
+): ViewStyle {
+  return isRTL
+    ? { paddingEnd: start, paddingStart: end, paddingTop: top, paddingBottom: bottom }
+    : { paddingStart: start, paddingEnd: end, paddingTop: top, paddingBottom: bottom };
+}
+
+// RTL-aware position (left/right → start/end)
+export function rtlPosition(
+  left?: number,
+  right?: number
+): ViewStyle {
+  return isRTL
+    ? { right: left, left: right }
+    : { left, right };
+}
+
+// RTL-aware flex direction for horizontal layouts
+export const rtlFlexDirection: 'row' | 'row-reverse' = isRTL ? 'row-reverse' : 'row';
+
+// RTL-aware text alignment
+export const rtlTextAlign: 'left' | 'right' = isRTL ? 'right' : 'left';
