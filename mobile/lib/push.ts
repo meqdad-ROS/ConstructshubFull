@@ -1,6 +1,29 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
 import { api } from './api';
+
+export function setupNotificationListener() {
+  // Handle notification received while app is in foreground
+  const foregroundSubscription = Notifications.addNotificationReceivedListener((notification) => {
+    // Handle foreground notification (show in-app banner, update badge, etc.)
+    console.log('[push] notification received:', notification.request.content.data);
+  });
+
+  // Handle notification tap (when user taps a push notification)
+  const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const data = response.notification.request.content.data || {};
+    const path = data.path ?? data.url ?? data.deepLink;
+    if (typeof path === 'string' && path.length > 0) {
+      router.push(path as never);
+    }
+  });
+
+  return () => {
+    foregroundSubscription.remove();
+    responseSubscription.remove();
+  };
+}
 
 export async function registerForPushAsync(): Promise<string | null> {
   try {
