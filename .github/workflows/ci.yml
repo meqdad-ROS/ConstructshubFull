@@ -7,6 +7,10 @@
 #   3. bim      — build the sandboxed BIM image, run pytest *inside* it
 #   4. docker   — build the production web image (depends on web passing)
 #
+# AI eval harness (D1) runs in its own workflow (`ai-evals.yml`) so a web- or
+# mobile-only PR does not spin up a Python runner. See that file for the
+# path filter that gates when the smoke set must pass.
+#
 # Caches:
 #   * actions/setup-node caches ~/.npm (keyed on package-lock.json)
 #   * waquor/node_modules is cached between jobs on the same lockfile hash

@@ -1,0 +1,102 @@
+# AI evaluation harness — D1 gating job.
+#
+# Scope: unit tests for the metric calculations + a deterministic 10-sample
+# smoke run across all three tracks (detection / OCR / BIM). The full 50/30/5
+# evaluation is a manual (/release-time) run — the smoke set exists to catch
+# regressions in the harness itself, in the services it adapts to, and in the
+# dataset manifests.
+#
+# This job gates D2–D5. It MUST fail on:
+#   * a crash in the metric/runner code,
+#   * a malformed manifest or missing sample bytes,
+#   * a change to the detection smoke manifest that drops the recall floor
+#     below the committed baseline (checked by the smoke run's zero-detection
+#     offline fallback: a regression that fakes success would show up as
+#     "service reports detections" without matching ground truth, which still
+#     scores 0 under the baseline conditions here).
+#
+# It MUST NOT be made to pass by lowering a threshold or deleting an assertion
+# without a documented, evidence-based reason — the SRS writes that rule and
+# the baseline report is the public evidence.
+
+name: ai-evals
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ai/evals/**"
+      - "waquor/lib/search/image.ts"
+      - "waquor/lib/search/video.ts"
+      - "waquor/lib/search/ocr.ts"
+      - "waquor/src/app/api/search/ocr/**"
+      - "waquor/src/app/api/search/image/**"
+      - "waquor/src/app/api/search/video/**"
+      - "services/bim/**"
+      - ".github/workflows/ai-evals.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "ai/evals/**"
+      - "waquor/lib/search/image.ts"
+      - "waquor/lib/search/video.ts"
+      - "waquor/lib/search/ocr.ts"
+      - "waquor/src/app/api/search/ocr/**"
+      - "waquor/src/app/api/search/image/**"
+      - "waquor/src/app/api/search/video/**"
+      - "services/bim/**"
+      - ".github/workflows/ai-evals.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ai-evals-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  harness:
+    name: harness unit tests + 10-sample smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # The harness is stdlib-only (see ai/evals/harness/__init__.py). We
+      # install Pillow ONLY for the dataset regeneration step — regenerating
+      # the samples catches cases where someone edits build_datasets.py and
+      # expects the manifest to still line up. Pillow is NOT a runtime dep
+      # of the harness and is NOT added to any requirements.txt.
+      - name: Install Pillow (dataset-regen only, not a runtime dep)
+        run: pip install --no-cache-dir Pillow==12.1.1
+
+      - name: Harness unit tests
+        run: python -m unittest discover -v ai/evals/tests -t .
+
+      # Regenerate datasets to catch a drifted build script.
+      - name: Verify dataset manifests regenerate cleanly
+        run: python ai/evals/datasets/build_datasets.py
+
+      - name: Smoke run — 10 samples per track
+        run: python -m ai.evals.runner --smoke --out ai/evals/reports/ci-smoke.md
+
+      - name: Verify smoke report is well-formed
+        run: |
+          test -s ai/evals/reports/ci-smoke.md
+          grep -q "## Detection — construction-material imagery" ai/evals/reports/ci-smoke.md
+          grep -q "## OCR — document scans & handwritten Arabic" ai/evals/reports/ci-smoke.md
+          grep -q "## BIM — IFC quantity extraction" ai/evals/reports/ci-smoke.md
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-evals-smoke-${{ github.sha }}
+          path: ai/evals/reports/ci-smoke.md
+          retention-days: 14
+          if-no-files-found: warn

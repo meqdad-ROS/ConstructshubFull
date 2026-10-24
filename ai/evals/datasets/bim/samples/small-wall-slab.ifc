@@ -1,0 +1,24 @@
+ISO-10303-21;
+HEADER;
+FILE_DESCRIPTION(('ConstructsHub eval fixture'), '2;1');
+FILE_NAME('small-wall-slab.ifc', '2026-10-24T00:00:00', ('eval'), ('eval'), 'EvalHarness', '', '');
+FILE_SCHEMA(('IFC4'));
+ENDSEC;
+DATA;
+
+#1=IFCWALL('tag1','name1',$,$,$,$,$,$);
+#2=IFCWALL('tag2','name2',$,$,$,$,$,$);
+#3=IFCWALL('tag3','name3',$,$,$,$,$,$);
+#4=IFCWALL('tag4','name4',$,$,$,$,$,$);
+#5=IFCSLAB('tag5','name5',$,$,$,$,$,$);
+#6=IFCSLAB('tag6','name6',$,$,$,$,$,$);
+#7=IFCDOOR('tag7','name7',$,$,$,$,$,$);
+#8=IFCDOOR('tag8','name8',$,$,$,$,$,$);
+#9=IFCDOOR('tag9','name9',$,$,$,$,$,$);
+#10=IFCWINDOW('tag10','name10',$,$,$,$,$,$);
+#11=IFCWINDOW('tag11','name11',$,$,$,$,$,$);
+#12=IFCWINDOW('tag12','name12',$,$,$,$,$,$);
+#13=IFCWINDOW('tag13','name13',$,$,$,$,$,$);
+#14=IFCWINDOW('tag14','name14',$,$,$,$,$,$);
+ENDSEC;
+END-ISO-10303-21;

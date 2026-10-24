@@ -1,0 +1,522 @@
+{
+  "schema_version": 1,
+  "kind": "ocr",
+  "name": "constructshub-ocr-v1",
+  "version": "2026.10.24",
+  "description": "OCR document scans — rendered print English, Arabic, Arabic+English, Arabic-Indic numerals, and calligraphic Arabic (handwriting-like but NOT a specimen). 32 included + 5 staged real documents pending.",
+  "samples": [
+    {
+      "sample_id": "ocr-001-en",
+      "file": "samples/ocr-001-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Steel rebar 16mm bundle 50 pieces",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-002-en",
+      "file": "samples/ocr-002-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Concrete block 20cm pallet 120",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-003-en",
+      "file": "samples/ocr-003-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Cement bag OPC 50kg quantity 240",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-004-en",
+      "file": "samples/ocr-004-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "PVC pipe DN100 length 6m",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-005-en",
+      "file": "samples/ocr-005-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Copper fitting elbow 22mm box of 50",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-006-en",
+      "file": "samples/ocr-006-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Ball valve PN16 2 inch stainless steel",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-007-en",
+      "file": "samples/ocr-007-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Reinforcement mesh 150x150mm 4.5m x 2.4m",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-008-en",
+      "file": "samples/ocr-008-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Formwork plywood 18mm 1220 x 2440mm",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-009-en",
+      "file": "samples/ocr-009-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Site concrete C25/30 ready mix 8 m3",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-010-en",
+      "file": "samples/ocr-010-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Breaker panel 24-way MCB TPN",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-011-en",
+      "file": "samples/ocr-011-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "AC chiller 60 TR air cooled",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-012-en",
+      "file": "samples/ocr-012-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Excavator CAT 320D hourly rate review",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-013-ar",
+      "file": "samples/ocr-013-ar.png",
+      "language": "ar",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "حديد تسليح قطر 16 ملم عدد 50 قضيب",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-014-ar",
+      "file": "samples/ocr-014-ar.png",
+      "language": "ar",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "طوب احمر كمية 1000 قطعة",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-015-ar",
+      "file": "samples/ocr-015-ar.png",
+      "language": "ar",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "كيس اسمنت 50 كيلو عدد 120",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-016-ar",
+      "file": "samples/ocr-016-ar.png",
+      "language": "ar",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "انبوب بي في سي قطر 100 طول 6 متر",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-017-ar",
+      "file": "samples/ocr-017-ar.png",
+      "language": "ar",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "صمام كروي ضغط 16 بار قياس 2 بوصة",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-018-ar",
+      "file": "samples/ocr-018-ar.png",
+      "language": "ar",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "لوح خشب قالب سمك 18 مم مقاس 1220 2440",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-019-ar",
+      "file": "samples/ocr-019-ar.png",
+      "language": "ar",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "كونكريت جاهز رتبة 25 حجم 8 متر مكعب",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-020-ar+en",
+      "file": "samples/ocr-020-ar+en.png",
+      "language": "ar+en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Supplier Al-Rajhi Steel - 16mm rebar - sum 1240 JOD",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-021-ar+en",
+      "file": "samples/ocr-021-ar+en.png",
+      "language": "ar+en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "فاتورة Invoice 2026-10-24 SAR 4500",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-022-ar+en",
+      "file": "samples/ocr-022-ar+en.png",
+      "language": "ar+en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Site Address: الطريق الدائري Ring Road building 12",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-023-ar-digits",
+      "file": "samples/ocr-023-ar-digits.png",
+      "language": "ar-digits",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "الكمية ٥٠٠ متر مكعب السعر ١٢٠٠ ريال",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-024-ar-digits",
+      "file": "samples/ocr-024-ar-digits.png",
+      "language": "ar-digits",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "عدد ٢٥٠ قطعة مقاس ١٦ ملم",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-025-ar-digits",
+      "file": "samples/ocr-025-ar-digits.png",
+      "language": "ar-digits",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "ارتفاع ٣.٥ متر عرض ٢.٧٥ متر",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-026-en",
+      "file": "samples/ocr-026-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Receipt total 1250.75 SAR including VAT 15 pct",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-027-en",
+      "file": "samples/ocr-027-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "VAT invoice ZATCA phase 2 compliant QR code",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-028-ar-handwritten",
+      "file": "samples/ocr-028-ar-handwritten.png",
+      "language": "ar-handwritten",
+      "is_handwritten": true,
+      "included": true,
+      "transcript": "تسليم اسمنت صباح الاربعاء مع التوقيع",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": "ar-handwritten is calligraphic rendered print (Amiri Quran font), NOT a human handwriting specimen. See the staged acquisition plan in ai/evals/README.md for real handwritten specimens required before D4 can be scored on handwriting."
+      }
+    },
+    {
+      "sample_id": "ocr-029-ar-handwritten",
+      "file": "samples/ocr-029-ar-handwritten.png",
+      "language": "ar-handwritten",
+      "is_handwritten": true,
+      "included": true,
+      "transcript": "ملاحظة تاخر صرف الحديد يوم السبت",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": "ar-handwritten is calligraphic rendered print (Amiri Quran font), NOT a human handwriting specimen. See the staged acquisition plan in ai/evals/README.md for real handwritten specimens required before D4 can be scored on handwriting."
+      }
+    },
+    {
+      "sample_id": "ocr-030-ar-handwritten",
+      "file": "samples/ocr-030-ar-handwritten.png",
+      "language": "ar-handwritten",
+      "is_handwritten": true,
+      "included": true,
+      "transcript": "استلام الدفعة الاولى بقيمة الفين دينار",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": "ar-handwritten is calligraphic rendered print (Amiri Quran font), NOT a human handwriting specimen. See the staged acquisition plan in ai/evals/README.md for real handwritten specimens required before D4 can be scored on handwriting."
+      }
+    },
+    {
+      "sample_id": "ocr-031-ar-handwritten",
+      "file": "samples/ocr-031-ar-handwritten.png",
+      "language": "ar-handwritten",
+      "is_handwritten": true,
+      "included": true,
+      "transcript": "اتفاق على زيادة الكمية الى خمسمائة متر",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": "ar-handwritten is calligraphic rendered print (Amiri Quran font), NOT a human handwriting specimen. See the staged acquisition plan in ai/evals/README.md for real handwritten specimens required before D4 can be scored on handwriting."
+      }
+    },
+    {
+      "sample_id": "ocr-032-ar-handwritten",
+      "file": "samples/ocr-032-ar-handwritten.png",
+      "language": "ar-handwritten",
+      "is_handwritten": true,
+      "included": true,
+      "transcript": "تاكيد موعد صب الطابق الثالث مساء الاحد",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": "ar-handwritten is calligraphic rendered print (Amiri Quran font), NOT a human handwriting specimen. See the staged acquisition plan in ai/evals/README.md for real handwritten specimens required before D4 can be scored on handwriting."
+      }
+    },
+    {
+      "sample_id": "ocr-staged-01-handwritten-site-dayplan",
+      "file": null,
+      "included": false,
+      "reason": "staged acquisition — awaiting licensed real document scan",
+      "language": "ar-handwritten",
+      "is_handwritten": true,
+      "transcript": "<pending real-document transcription by independent reviewer>",
+      "provenance": {
+        "source": "pending — curator-sourced licensed document",
+        "licence": "pending"
+      }
+    },
+    {
+      "sample_id": "ocr-staged-02-handwritten-tender-notes",
+      "file": null,
+      "included": false,
+      "reason": "staged acquisition — awaiting licensed real document scan",
+      "language": "ar-handwritten",
+      "is_handwritten": true,
+      "transcript": "<pending real-document transcription by independent reviewer>",
+      "provenance": {
+        "source": "pending — curator-sourced licensed document",
+        "licence": "pending"
+      }
+    },
+    {
+      "sample_id": "ocr-staged-03-handwritten-receipt-jordan",
+      "file": null,
+      "included": false,
+      "reason": "staged acquisition — awaiting licensed real document scan",
+      "language": "ar-handwritten",
+      "is_handwritten": true,
+      "transcript": "<pending real-document transcription by independent reviewer>",
+      "provenance": {
+        "source": "pending — curator-sourced licensed document",
+        "licence": "pending"
+      }
+    },
+    {
+      "sample_id": "ocr-staged-04-scanned-pdf-contract-page1",
+      "file": null,
+      "included": false,
+      "reason": "staged acquisition — awaiting licensed real document scan",
+      "language": "ar+en",
+      "is_handwritten": false,
+      "transcript": "<pending real-document transcription by independent reviewer>",
+      "provenance": {
+        "source": "pending — curator-sourced licensed document",
+        "licence": "pending"
+      }
+    },
+    {
+      "sample_id": "ocr-staged-05-scanned-pdf-boq-sample",
+      "file": null,
+      "included": false,
+      "reason": "staged acquisition — awaiting licensed real document scan",
+      "language": "en",
+      "is_handwritten": false,
+      "transcript": "<pending real-document transcription by independent reviewer>",
+      "provenance": {
+        "source": "pending — curator-sourced licensed document",
+        "licence": "pending"
+      }
+    }
+  ]
+}

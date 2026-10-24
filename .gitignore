@@ -8,6 +8,11 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+
+# tesseract.js downloads language-model files at runtime; the AI eval harness
+# triggers these from the repo root. Keep them out of version control.
+*.traineddata
+*.traineddata.gz
 .venv/
 
 # Secrets & environment

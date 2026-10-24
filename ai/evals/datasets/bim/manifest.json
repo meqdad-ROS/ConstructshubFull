@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "kind": "bim",
+  "name": "constructshub-bim-v1",
+  "version": "2026.10.24",
+  "description": "IFC STEP fixtures with known entity counts. Valid ISO-10303-21 files generated locally; truth is literal.",
+  "samples": [
+    {
+      "sample_id": "bim-001-small-wall-slab",
+      "file": "samples/small-wall-slab.ifc",
+      "included": true,
+      "expected": [
+        {
+          "ifc_class": "IFCDOOR",
+          "quantity": 3.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCSLAB",
+          "quantity": 2.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCWALL",
+          "quantity": 4.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCWINDOW",
+          "quantity": 5.0,
+          "unit": "count"
+        }
+      ],
+      "provenance": {
+        "source": "synthetic-ifc-fixture",
+        "licence": "CC0 — generated locally by build_datasets.py",
+        "generator_seed": 42,
+        "note": "Valid ISO-10303-21 STEP; the DATA section contains exactly the entity instances the manifest records as truth. The lib/bsdd.ts parser matches this behavior."
+      }
+    },
+    {
+      "sample_id": "bim-002-beam-column-grid",
+      "file": "samples/beam-column-grid.ifc",
+      "included": true,
+      "expected": [
+        {
+          "ifc_class": "IFCBEAM",
+          "quantity": 12.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCCOLUMN",
+          "quantity": 9.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCSLAB",
+          "quantity": 1.0,
+          "unit": "count"
+        }
+      ],
+      "provenance": {
+        "source": "synthetic-ifc-fixture",
+        "licence": "CC0 — generated locally by build_datasets.py",
+        "generator_seed": 42,
+        "note": "Valid ISO-10303-21 STEP; the DATA section contains exactly the entity instances the manifest records as truth. The lib/bsdd.ts parser matches this behavior."
+      }
+    },
+    {
+      "sample_id": "bim-003-piping-run",
+      "file": "samples/piping-run.ifc",
+      "included": true,
+      "expected": [
+        {
+          "ifc_class": "IFCFLOWSEGMENT",
+          "quantity": 20.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCPIPEFITTING",
+          "quantity": 7.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCVALVE",
+          "quantity": 4.0,
+          "unit": "count"
+        }
+      ],
+      "provenance": {
+        "source": "synthetic-ifc-fixture",
+        "licence": "CC0 — generated locally by build_datasets.py",
+        "generator_seed": 42,
+        "note": "Valid ISO-10303-21 STEP; the DATA section contains exactly the entity instances the manifest records as truth. The lib/bsdd.ts parser matches this behavior."
+      }
+    },
+    {
+      "sample_id": "bim-004-electrical-panel",
+      "file": "samples/electrical-panel.ifc",
+      "included": true,
+      "expected": [
+        {
+          "ifc_class": "IFCCABLECARRIERSEGMENT",
+          "quantity": 8.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCCABLESEGMENT",
+          "quantity": 24.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCELECTRICDISTRIBUTIONBOARD",
+          "quantity": 1.0,
+          "unit": "count"
+        }
+      ],
+      "provenance": {
+        "source": "synthetic-ifc-fixture",
+        "licence": "CC0 — generated locally by build_datasets.py",
+        "generator_seed": 42,
+        "note": "Valid ISO-10303-21 STEP; the DATA section contains exactly the entity instances the manifest records as truth. The lib/bsdd.ts parser matches this behavior."
+      }
+    },
+    {
+      "sample_id": "bim-005-mixed-storey",
+      "file": "samples/mixed-storey.ifc",
+      "included": true,
+      "expected": [
+        {
+          "ifc_class": "IFCBEAM",
+          "quantity": 6.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCCOLUMN",
+          "quantity": 4.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCDOOR",
+          "quantity": 2.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCSLAB",
+          "quantity": 2.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCSTAIR",
+          "quantity": 1.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCWALL",
+          "quantity": 6.0,
+          "unit": "count"
+        },
+        {
+          "ifc_class": "IFCWINDOW",
+          "quantity": 4.0,
+          "unit": "count"
+        }
+      ],
+      "provenance": {
+        "source": "synthetic-ifc-fixture",
+        "licence": "CC0 — generated locally by build_datasets.py",
+        "generator_seed": 42,
+        "note": "Valid ISO-10303-21 STEP; the DATA section contains exactly the entity instances the manifest records as truth. The lib/bsdd.ts parser matches this behavior."
+      }
+    }
+  ]
+}

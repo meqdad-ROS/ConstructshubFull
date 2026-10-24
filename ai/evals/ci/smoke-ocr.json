@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "kind": "ocr",
+  "name": "constructshub-ocr-v1-smoke",
+  "version": "2026.10.24-smoke",
+  "description": "CI smoke subset of constructshub-ocr-v1 — first 10 included samples. Deterministic by design.",
+  "samples": [
+    {
+      "sample_id": "ocr-001-en",
+      "file": "../datasets/ocr/samples/ocr-001-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Steel rebar 16mm bundle 50 pieces",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-002-en",
+      "file": "../datasets/ocr/samples/ocr-002-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Concrete block 20cm pallet 120",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-003-en",
+      "file": "../datasets/ocr/samples/ocr-003-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Cement bag OPC 50kg quantity 240",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-004-en",
+      "file": "../datasets/ocr/samples/ocr-004-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "PVC pipe DN100 length 6m",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-005-en",
+      "file": "../datasets/ocr/samples/ocr-005-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Copper fitting elbow 22mm box of 50",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-006-en",
+      "file": "../datasets/ocr/samples/ocr-006-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Ball valve PN16 2 inch stainless steel",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-007-en",
+      "file": "../datasets/ocr/samples/ocr-007-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Reinforcement mesh 150x150mm 4.5m x 2.4m",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-008-en",
+      "file": "../datasets/ocr/samples/ocr-008-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Formwork plywood 18mm 1220 x 2440mm",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-009-en",
+      "file": "../datasets/ocr/samples/ocr-009-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Site concrete C25/30 ready mix 8 m3",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    },
+    {
+      "sample_id": "ocr-010-en",
+      "file": "../datasets/ocr/samples/ocr-010-en.png",
+      "language": "en",
+      "is_handwritten": false,
+      "included": true,
+      "transcript": "Breaker panel 24-way MCB TPN",
+      "provenance": {
+        "source": "synthetic-rendered-text",
+        "licence": "CC0 — generated locally",
+        "generator_seed": 42,
+        "note": null
+      }
+    }
+  ],
+  "allow_paths_under": "../datasets/ocr"
+}
