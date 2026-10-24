@@ -1,0 +1,21 @@
+% ---------- main.tex : English master ----------
+\documentclass[11pt,twoside,openright]{book}
+\input{preamble-en}
+\input{environments}
+\input{notation}
+
+\title{Book Title}
+\author{Meqdad Hasan}
+\date{}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+\input{frontmatter/preface}
+\mainmatter
+\include{chapters/ch01-sample}
+\backmatter
+% References appear at the end of each chapter (chapterbib); no global list.
+\printindex
+\end{document}

@@ -1,0 +1,52 @@
+% ---------- environments.tex : shared pedagogical environments ----------
+% Labels are language-aware: redefine the \...name macros in the Arabic master.
+\providecommand{\examplename}{Example}
+\providecommand{\practicenotename}{In Practice}
+\providecommand{\objectivesname}{Learning Objectives}
+\providecommand{\problemname}{Problem}
+\providecommand{\solutionname}{Solution}
+\providecommand{\summaryname}{Chapter Summary}
+
+\newcounter{example}[chapter]
+\renewcommand{\theexample}{\thechapter.\arabic{example}}
+% The counter is stepped OUTSIDE the box, so a \label placed inside the
+% example body refers to the example number (not the current section).
+\newtcolorbox{examplebox}[1]{enhanced,breakable,colback=white,colframe=NavyBlue!70!black,
+  fonttitle=\bfseries,title={\examplename~\theexample\ifx&#1&\else: #1\fi}}
+\newenvironment{example}[1][]{\refstepcounter{example}\begin{examplebox}{#1}}{\end{examplebox}}
+\AtBeginDocument{\ifdefined\crefname\crefname{example}{Example}{Examples}\fi}
+
+\newtcolorbox{practicenote}{enhanced,breakable,colback=Goldenrod!8,colframe=Goldenrod!80!black,
+  fonttitle=\bfseries,title=\practicenotename}
+
+\newtcolorbox{objectives}{enhanced,colback=NavyBlue!4,colframe=NavyBlue!50,
+  fonttitle=\bfseries,title=\objectivesname}
+
+\newtcolorbox{keyresult}{enhanced,colback=white,colframe=black!60,boxrule=0.6pt}
+
+% Worked-example internal headings
+\newcommand{\exgiven}{\par\noindent\textbf{Given.}\ }
+\newcommand{\exfind}{\par\noindent\textbf{Find.}\ }
+\newcommand{\exapproach}{\par\medskip\noindent\textbf{Approach.}\ }
+\newcommand{\exsolution}{\par\medskip\noindent\textbf{Solution.}\ }
+\newcommand{\excheck}{\par\medskip\noindent\textbf{Check.}\ }
+\newcommand{\exdiscussion}{\par\medskip\noindent\textbf{Discussion.}\ }
+
+% End-of-chapter problems: \begin{problems} \item[\probbasic] ... \end{problems}
+\newlist{problems}{enumerate}{1}
+\setlist[problems]{label=\thechapter.\arabic*,leftmargin=*,itemsep=0.6em}
+\newcommand{\probint}{$^{\ast}$}        % intermediate
+\newcommand{\probadv}{$^{\ast\ast}$}    % advanced
+\newcommand{\probdesign}{\textsuperscript{D}}
+\newcommand{\probcomp}{\textsuperscript{C}}
+
+% Figure placeholder for artwork not yet produced
+\newcommand{\figplaceholder}[1]{%
+  \fbox{\parbox{0.9\linewidth}{\centering\small\itshape Figure brief: #1}}}
+
+% Theorem-like environments
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}

@@ -1,0 +1,44 @@
+\chapter{Sample Chapter}\label{ch:1-sample}
+
+% Opening motivation: a concrete engineering problem the chapter will solve.
+
+\begin{objectives}
+After studying this chapter, you should be able to:
+\begin{enumerate}[label=\arabic*.]
+  \item compute \dots
+  \item explain why \dots
+\end{enumerate}
+\end{objectives}
+
+\section{First Concept}\label{sec:1-first}
+Why, intuition, model, formal statement, check. Cite the literature the chapter relies on, e.g.\ \citet{boyce2014}.
+\begin{equation}\label{eq:1-ohm}
+  V = R\,I
+\end{equation}
+
+\begin{example}[Current through a heater]\label{ex:1-heater}
+\exgiven A heating element of resistance \SI{24}{\ohm} is connected to \SI{230}{\volt}.
+\exfind The current drawn.
+\exapproach Apply \eqref{eq:1-ohm} directly; assume a purely resistive load.
+\exsolution $I = V/R = \SI{230}{\volt}/\SI{24}{\ohm} \approx \SI{9.6}{\ampere}$.
+\excheck Units: \si{\volt\per\ohm} = \si{\ampere}; magnitude typical of a \SI{2.2}{\kilo\watt} heater.
+\exdiscussion A \SI{10}{\ampere} circuit would be marginal; a \SI{16}{\ampere} circuit is appropriate.
+\end{example}
+
+\begin{practicenote}
+Real heater resistance rises with temperature, so the cold inrush current exceeds the running current.
+\end{practicenote}
+
+\section*{\summaryname}
+Key ideas and equations (see Example~\ref{ex:1-heater}).
+
+\section*{Problems}
+\begin{problems}
+  \item A basic problem.
+  \item\probint{} An intermediate problem.
+  \item\probdesign{} A design problem.
+\end{problems}
+
+% ---- End-of-chapter references (books and peer-reviewed papers only) ----
+\bibliographystyle{plainnat}
+\bibliography{references}

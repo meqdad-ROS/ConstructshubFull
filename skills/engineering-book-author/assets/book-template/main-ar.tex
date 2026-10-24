@@ -1,0 +1,31 @@
+% ---------- main-ar.tex : Arabic master (compile with XeLaTeX) ----------
+\documentclass[11pt,twoside,openright]{book}
+\input{preamble-ar}
+\newcommand{\examplename}{مثال}
+\newcommand{\practicenotename}{من الواقع العملي}
+\newcommand{\objectivesname}{أهداف التعلم}
+\newcommand{\problemname}{تمرين}
+\newcommand{\solutionname}{الحل}
+\newcommand{\summaryname}{ملخص الفصل}
+\input{environments}
+\renewcommand{\exgiven}{\par\noindent\textbf{المعطيات.}\ }
+\renewcommand{\exfind}{\par\noindent\textbf{المطلوب.}\ }
+\renewcommand{\exapproach}{\par\medskip\noindent\textbf{الفكرة.}\ }
+\renewcommand{\exsolution}{\par\medskip\noindent\textbf{الحل.}\ }
+\renewcommand{\excheck}{\par\medskip\noindent\textbf{التحقق.}\ }
+\renewcommand{\exdiscussion}{\par\medskip\noindent\textbf{مناقشة.}\ }
+\input{notation}
+
+\title{عنوان الكتاب}
+\author{مقداد حسن}
+\date{}
+
+\begin{document}
+\frontmatter
+\maketitle
+\tableofcontents
+\mainmatter
+% \include{chapters/ch01-ar-sample}
+\backmatter
+% المراجع في نهاية كل فصل (chapterbib)
+\end{document}

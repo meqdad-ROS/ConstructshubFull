@@ -1,0 +1,43 @@
+% ---------- preamble-ar.tex : Arabic / bilingual preamble (XeLaTeX ONLY) ----------
+% Requires: XeLaTeX, polyglossia, bidi, and the Amiri font (all available on Overleaf).
+\usepackage{fontspec}
+\usepackage[a4paper,inner=30mm,outer=22mm,top=25mm,bottom=28mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{siunitx}
+\sisetup{per-mode=symbol}
+\usepackage{graphicx}
+\usepackage{booktabs,tabularx,multirow}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,positioning}
+\usepackage{pgfplots}\pgfplotsset{compat=1.17}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,columns=fullflexible}
+\usepackage[skins,breakable]{tcolorbox}
+\usepackage[sectionbib]{chapterbib}   % a References list at the end of every chapter
+\usepackage[round,sort&compress]{natbib}
+\usepackage{makeidx}\makeindex
+\usepackage[hidelinks]{hyperref}          % must come BEFORE polyglossia/bidi
+% ---- languages and fonts (load last) ----
+\usepackage{polyglossia}
+\setmainlanguage[numerals=western]{arabic} % use numerals=maghrib/mashriq to change
+\setotherlanguage{english}
+\setmainfont{Latin Modern Roman}           % Latin text and fallbacks
+\newfontfamily\arabicfont[Script=Arabic,Scale=1.1]{Amiri}
+\newfontfamily\arabicfontsf[Script=Arabic]{Amiri}
+% cleveref is avoided in Arabic masters (bidi conflicts); use \ref and \eqref with Arabic words:
+%   الشكل~\ref{fig:..}  المعادلة~\eqref{eq:..}
+% Arabic chapter word and chapter-based numbering (polyglossia resets these on language switch)
+\gappto\captionsarabic{%
+  \renewcommand{\chaptername}{الفصل}%
+  \renewcommand{\bibname}{المراجع}%
+  \renewcommand{\theequation}{\thechapter.\arabic{equation}}%
+  \renewcommand{\thefigure}{\thechapter.\arabic{figure}}%
+  \renewcommand{\thetable}{\thechapter.\arabic{table}}}
+% End-of-chapter references in an Arabic book: Arabic heading, English (LTR) entries.
+% Use at the end of every chapter:  \bibliographystyle{plainnat}\chapterreferences
+\newcommand{\chapterreferences}{%
+  \section*{المراجع}%
+  \begin{english}\renewcommand{\bibsection}{}\bibliography{references}\end{english}}

@@ -1,0 +1,30 @@
+% ---------- preamble-en.tex : English book preamble (pdfLaTeX or XeLaTeX) ----------
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\else
+  \usepackage{fontspec}
+\fi
+\usepackage[a4paper,inner=30mm,outer=22mm,top=25mm,bottom=28mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{siunitx}
+\sisetup{per-mode=symbol}
+\usepackage{graphicx}
+\usepackage{booktabs,tabularx,multirow}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,positioning}
+\usepackage{pgfplots}\pgfplotsset{compat=1.17}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,columns=fullflexible}
+\usepackage[skins,breakable]{tcolorbox}
+\usepackage[sectionbib]{chapterbib}   % a References list at the end of every chapter
+\usepackage[round,sort&compress]{natbib}
+\usepackage{makeidx}\makeindex
+\renewcommand{\bibname}{References}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
