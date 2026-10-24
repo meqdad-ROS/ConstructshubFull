@@ -90,6 +90,7 @@ export default function RootLayout() {
         <Stack.Screen name="messages/[threadId]" options={{ title: 'Chat' }} />
         <Stack.Screen name="tenders/[id]" options={{ title: 'Tender' }} />
         <Stack.Screen name="estimator" options={{ title: 'AI Estimator', presentation: 'modal' }} />
+        <Stack.Screen name="image-search" options={{ title: 'Image search' }} />
       </Stack>
     );
   }, [ready]);

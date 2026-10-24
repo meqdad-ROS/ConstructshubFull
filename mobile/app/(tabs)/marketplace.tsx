@@ -1,8 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
-import * as ImagePicker from 'expo-image-picker';
 import { Body, Button, Card, Caption, Empty, Row, Screen, StatusPill, Subtitle, Title } from '../../components/ui';
 import { useToast } from '../../components/toast';
 import { useAutocomplete, useSearch, type SearchHit } from '../../lib/queries';
@@ -10,13 +9,13 @@ import { apiUpload } from '../../lib/api';
 import { colors, radius, spacing, typography } from '../../lib/theme';
 import { fmtSar } from '../../lib/money';
 import { t } from '../../lib/i18n';
-
 export default function MarketplaceScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ q?: string }>();
+  const incomingQuery = typeof params.q === 'string' ? params.q : '';
   const toast = useToast();
-  const [query, setQuery] = useState('');
-  const [committed, setCommitted] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [query, setQuery] = useState(incomingQuery);
+  const [committed, setCommitted] = useState(incomingQuery);
   const [uploadingAudio, setUploadingAudio] = useState(false);
 
   const autocomplete = useAutocomplete(query);
@@ -29,35 +28,9 @@ export default function MarketplaceScreen() {
     setCommitted(text.trim());
   }, []);
 
-  const onImageSearch = useCallback(async () => {
-    try {
-      const pick = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.7,
-      });
-      if (pick.canceled || !pick.assets[0]) return;
-      setUploadingImage(true);
-      const asset = pick.assets[0];
-      const result = await apiUpload<{ regions: Array<{ query: string }> }>(
-        '/api/search/image',
-        { uri: asset.uri, name: asset.fileName ?? 'photo.jpg', mime: asset.mimeType ?? 'image/jpeg' },
-        undefined,
-        'image'
-      );
-      const first = result.regions[0]?.query;
-      if (first) {
-        setQuery(first);
-        commit(first);
-        toast.show(`Detected: ${first}`, { tone: 'success' });
-      } else {
-        toast.show('No labels detected in the image', { tone: 'warning' });
-      }
-    } catch (err) {
-      toast.show(err instanceof Error ? err.message : 'Image search failed', { tone: 'danger' });
-    } finally {
-      setUploadingImage(false);
-    }
-  }, [commit, toast]);
+  const onImageSearch = useCallback(() => {
+    router.push('/image-search' as never);
+  }, [router]);
 
   const onVoiceSearch = useCallback(async () => {
     // The real recording UX would use expo-av — kept to a short upload
@@ -85,6 +58,13 @@ export default function MarketplaceScreen() {
       setUploadingAudio(false);
     }
   }, [commit, toast]);
+
+  useEffect(() => {
+    if (incomingQuery) {
+      setQuery(incomingQuery);
+      setCommitted(incomingQuery);
+    }
+  }, [incomingQuery]);
 
   const header = useMemo(
     () => (
@@ -116,7 +96,6 @@ export default function MarketplaceScreen() {
               label={t('market.image_search')}
               variant="secondary"
               onPress={onImageSearch}
-              loading={uploadingImage}
               fullWidth
             />
           </View>
@@ -140,7 +119,15 @@ export default function MarketplaceScreen() {
         ) : null}
       </View>
     ),
-    [autocomplete.data, commit, committed, onImageSearch, onVoiceSearch, query, uploadingAudio, uploadingImage]
+    [
+      autocomplete.data,
+      commit,
+      committed,
+      onImageSearch,
+      onVoiceSearch,
+      query,
+      uploadingAudio,
+    ]
   );
 
   const renderHit = useCallback(
