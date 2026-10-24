@@ -42,6 +42,20 @@ async function main() {
   // re-download, and so the .traineddata blobs never land next to source.
   const os = require("os");
   const cachePath = path.join(os.tmpdir(), "banabuild-tesseract-cache");
+
+  // Attempt tuned Arabic OCR from waquor/lib/ocr/arabic.ts (matches /api/search/ocr pipeline)
+  try {
+    const arabicModPath = path.join(waquorPkg, "lib/ocr/arabic.ts");
+    const { runTunedArabicOcr } = require(arabicModPath);
+    if (typeof runTunedArabicOcr === "function") {
+      const tuned = await runTunedArabicOcr(imagePath);
+      process.stdout.write(tuned.text || "");
+      process.exit(0);
+    }
+  } catch (_tunedErr) {
+    // Fall back to direct tesseract recognize if tuned module fails to load
+  }
+
   try {
     const { data } = await tesseract.recognize(imagePath, langs, {
       cachePath,
